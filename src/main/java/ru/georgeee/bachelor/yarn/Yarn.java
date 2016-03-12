@@ -1,5 +1,6 @@
 package ru.georgeee.bachelor.yarn;
 
+import edu.mit.jwi.item.POS;
 import lombok.Getter;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 import ru.georgeee.bachelor.yarn.xml.WordEntry;
@@ -39,6 +40,15 @@ public class Yarn {
         return wordByValueMap.getOrDefault(value, Collections.emptyList());
     }
 
+    public static POS getPOS(WordEntry wordEntry) {
+        switch (wordEntry.getId().charAt(0)){
+            case 'n' : return POS.NOUN;
+            case 'v' : return POS.VERB;
+            case 'a' : return POS.ADJECTIVE;
+        }
+        throw new IllegalArgumentException("Unknown POS for " + toString(wordEntry));
+    }
+
     @Getter
     public class Word {
         private final WordEntry wordEntry;
@@ -60,9 +70,10 @@ public class Yarn {
         }
     }
 
-    @Getter
     public static class WordSynsetEntry {
+        @Getter
         private final int pos;
+        @Getter
         private final SynsetEntry synset;
 
         @Override
@@ -92,7 +103,8 @@ public class Yarn {
 
     private static String toString(SynsetEntry.Word word) {
         WordEntry ref = (WordEntry) word.getRef();
-        return "{" + toString(ref) + " def=" + word.getDefinition().stream().map(SynsetEntry.Word.Definition::getValue).collect(Collectors.toList()) + "}";
+//        return "{" + toString(ref) + " def=" + word.getDefinition().stream().map(SynsetEntry.Word.Definition::getValue).collect(Collectors.toList()) + "}";
+        return toString(ref);
     }
 
     private static String toString(WordEntry ref) {

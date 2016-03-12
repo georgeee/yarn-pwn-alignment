@@ -53,7 +53,12 @@
     <dependency>
         <groupId>com.github.georgeee</groupId>
         <artifactId>star-dict-parser</artifactId>
-        <version>1.0.4</version>
+        <version>1.0.5</version>
+    </dependency>
+    <dependency>
+        <groupId>com.theoryinpractise.frege</groupId>
+        <artifactId>frege</artifactId>
+        <version>3.22.367-g2737683</version>
     </dependency>
     <dependency>
         <groupId>junit</groupId>
@@ -152,6 +157,35 @@
                     <source>yarn/yarn.xsd</source>
                 </sources>
                 <packageName>ru.georgeee.bachelor.yarn.xml</packageName>
+            </configuration>
+        </plugin>
+        <plugin>
+            <groupId>com.theoryinpractise.frege</groupId>
+            <artifactId>frege-maven-plugin</artifactId>
+            <version>1.0.7</version>
+            <executions>
+                <execution>
+                    <id>compile</id>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>test-compile</id>
+                    <phase>generate-test-sources</phase>
+                    <goals>
+                        <goal>test-compile</goal>
+                    </goals>
+                </execution>
+            </executions>
+            <configuration>
+                <inline>true</inline>
+                <hints>true</hints>
+                <sourceDirectory>src/main/frege</sourceDirectory>
+                <testSourceDirectory>src/test/frege</testSourceDirectory>
+                <outputDirectory>target/generated-sources/frege</outputDirectory>
+                <testOutputDirectory>target/generated-test-sources/frege</testOutputDirectory>
             </configuration>
         </plugin>
     </plugins>

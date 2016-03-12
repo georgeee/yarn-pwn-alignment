@@ -13,8 +13,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import ru.georgeee.SimpleDict;
 import ru.georgeee.bachelor.yarn.Yarn;
+import ru.georgeee.bachelor.yarn.graph.Metrics;
+import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
+import ru.georgeee.bachelor.yarn.xml.WordEntry;
 
 import javax.annotation.PostConstruct;
 import javax.xml.bind.JAXBContext;
@@ -96,11 +98,33 @@ public class Application implements CommandLineRunner {
     }
 
     private void testYarn2PWN(String s) {
+        System.out.println(Metrics.test(3.0, 2.0));
         List<Yarn.Word> wordDefs = yarn.getWord(s);
-        for(Yarn.Word word : wordDefs){
-            System.out.println("### Definition " + word.getId());
-            for(Yarn.WordSynsetEntry entry : word.getSynsets()){
-                System.out.println("## Synset entry " + entry);
+        for (Yarn.Word wordDef : wordDefs) {
+            System.out.println("### YARN Definition " + wordDef);
+            for (Yarn.WordSynsetEntry entry : wordDef.getSynsets()) {
+                System.out.println("## Synset " + entry.getSynset());
+                for (SynsetEntry.Word word : entry.getSynset().getWord()) {
+                    WordEntry wordEntry = (WordEntry) word.getRef();
+                    List<List<String>> translations = ruEnDict.translate(wordEntry.getWord());
+                    POS pos = Yarn.getPOS(wordEntry);
+                    int i = 0;
+                    for (List<String> tr : translations) {
+                        System.out.println("# Meaning " + ++i);
+                        for (String t : tr) {
+                            System.out.println("Translation: " + t);
+                            IIndexWord idxWord = pwnDict.getIndexWord(t, pos);
+                            if (idxWord == null) {
+                                System.out.println("<Not found in PWN>");
+                            } else {
+                                for (IWordID pwnWordID : idxWord.getWordIDs()) {
+                                    IWord pwnWord = pwnDict.getWord(pwnWordID);
+                                    System.out.println("{" + pwnWordID + " " + pwnWord.getLemma() + " synset: " + pwnWord.getSynset() + "}");
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }

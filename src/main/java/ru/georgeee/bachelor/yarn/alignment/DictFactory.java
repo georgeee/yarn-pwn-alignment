@@ -1,7 +1,6 @@
 package ru.georgeee.bachelor.yarn.alignment;
 
 import org.springframework.stereotype.Component;
-import ru.georgeee.SimpleDict;
 import ru.georgeee.stardict.Stardict;
 
 import java.io.IOException;

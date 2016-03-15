@@ -4,104 +4,17 @@ import frege.prelude.PreludeArrays
 import frege.prelude.Math
 import frege.java.Util
 import frege.data.Traversable
+import frege.data.Foldable
 import frege.data.HashMap
+import ru.georgeee.bachelor.yarn.graph.MetricsBase
 
-type Word = String
+measure :: MeasureMetrics -> [PreEdge t v] -> Double
+measure mm pes = p1 * (foldr' ((+) . measurePE) 0 pes)
+    where measurePE pe = (cost pe) * (p2 pe)
+          p1 = (fromInt $ length pes :: Double) / (fromInt $ mm.totalPreedgeCount)
+--          p1 = 1.0 / (fromInt $ mm.transSynsetCount)
+          meaningCard pe = length $ filter (\pe' -> pe'.wordI == pe.wordI && pe.transMeaningI == pe'.transMeaningI) pes
+          p2 = const 1.0
+          cost pe = 1.0 / (fromInt $ meaningCard pe)
 
-data POS = pure native ru.georgeee.bachelor.yarn.graph.SynsetNode.POS
-
-data Query = pure native ru.georgeee.bachelor.yarn.graph.Query where
-    pure native new :: Word -> POS -> Query
-
-data Node t v = native ru.georgeee.bachelor.yarn.graph.SynsetNode where
-    native addEdge :: Mutable s (Node t v) -> Mutable s (Node v t) -> Double -> ST s ()
-    native getWords :: Mutable s (Node t v) -> ST s (JList String)
-    native getPOS :: Mutable s (Node t v) -> ST s POS
-
-instance Eq (Node t v) where
-    pure native == equals :: Node t v -> Node t v -> Bool
-    pure native hashCode :: Node t v -> Int
-
-data Repo t v = native ru.georgeee.bachelor.yarn.graph.NodeRepository where
-    native getNode :: Mutable s (Repo t v) -> t -> STMutable s (Node t v)
-    native findNode :: Mutable s (Repo t v) -> Query -> STMutable s (List (Node t v))
-
--- Be cautious, using this data type
--- list shouldn't violate it's contract (thus returning same values)
-data JList e = pure native java.util.List where
-    pure native get :: JList e -> Int -> Maybe e
-    pure native size :: JList e -> Int
-
---Better rewrite with iterators
-instance ListSource JList where
-    toList l = impl 0
-        where
-              impl i | i < sz = let ls = impl (i + 1)
-                                 in maybe ls (flip (:) ls) $ JList.get l i
-                     | otherwise = []
-              sz = JList.size l
-
-data Dict = pure native ru.georgeee.bachelor.yarn.alignment.SimpleDict where
-    pure native translate' translate :: Dict -> Word -> JList (JList Word)
-
-    translate :: Dict -> Word -> [[Word]]
-    translate d w = map toList . toList $ translate' d w
---    translate :: Dict -> Word -> [[Word]]
---    translate d w = ST.run $ translate' d w >>= fromJList
-
-
-cat = flip Dict.translate "cat"
-addEdge' n1 n2 = Node.addEdge n1 n2 0.9
-
-data PreEdge t v = PreEdge
-                       { wordI :: Int
-                       , transMeaningI :: Int
-                       , transOrderI :: Int
-                       , transSynsetI :: Int
-                       , transSynset :: Node t v
-                       }
-
-test dict repo node = do
-    pos <- Node.getPOS node
-    let findNode = Repo.findNode repo . flip Query.new pos
-    ws <- toList <$> Node.getWords node
-    let ts = map (Dict.translate dict) $ ws
-    ts' <- (traverse . traverse . traverse) (findNode >=> fromJList) ts
---    let pes = (fmap . fmap) measure $ HashMap.each $ groupBySynset $ toPreEdges ts'
-    return . head . head . head . head $ ts'
-
-processNode :: Dict -> Mutable s (Repo v t) -> Mutable s (Node t v) -> ST s ()
-processNode dict repo node = do
-    pos <- Node.getPOS node
-    let findNode = Repo.findNode repo . flip Query.new pos
-    ws <- toList <$> Node.getWords node
-    let ts = map (Dict.translate dict) $ ws
-    ts' <- (traverse . traverse . traverse) (findNode >=> fromJList) ts
-    let pes = (fmap . fmap) measure $ HashMap.each $ groupBySynset $ toPreEdges ts'
-    forM_ pes $ \(s, w) -> Node.addEdge node (mutable s) w
-
-toPreEdges :: [[[[ Node t v ]]]] -> [PreEdge t v]
-toPreEdges = fmap toPE . tp4
-    where toPE (wI, (tmI, (toI, (tsI, s)))) = PreEdge wI tmI toI tsI s
-
-instance Traversable ((,) a) where
-    traverse f (x, y) = (,) x <$> f y
-
-wI = zip ([1..] :: [Int])
-tp1 = wI
-tp2 = concat . fmap sequenceA . wI . fmap tp1
-tp3 :: [[[a]]] -> [(Int, (Int, (Int, a)))]
-tp3 = concat . fmap sequenceA . wI . fmap tp2
-tp4 :: [[[[a]]]] -> [(Int, (Int, (Int, (Int, a))))]
-tp4 = concat . fmap sequenceA . wI . fmap tp3
-
-fromJList = Iterator.toList <=< List.iterator
-
-groupBySynset :: [PreEdge t v] -> HashMap (Node t v) [PreEdge t v]
-groupBySynset = foldr f HashMap.empty
-    where f pe m = m.insert s arr'
-            where arr' = maybe [pe] ((:) pe) $ m.lookup s
-                  s = PreEdge.transSynset pe
-
-measure :: [PreEdge t v] -> Double
-measure pes = 0.0
+processNode = processNode' measure

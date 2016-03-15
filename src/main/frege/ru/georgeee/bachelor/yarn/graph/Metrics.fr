@@ -1,6 +1,0 @@
-module ru.georgeee.bachelor.yarn.graph.Metrics where
-
-import frege.prelude.Math(**)
-
-test :: Double -> Double -> Double
-test a b = a ** b

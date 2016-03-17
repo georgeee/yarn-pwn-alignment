@@ -11,6 +11,11 @@ type Word = String
 
 data POS = pure native ru.georgeee.bachelor.yarn.graph.SynsetNode.POS
 
+data MetricsParams = pure native ru.georgeee.bachelor.yarn.alignment.MetricsParams where
+    pure native p1Mean getP1Mean :: MetricsParams -> Double
+    pure native p1Sd getP1Sd :: MetricsParams -> Double
+    pure native p2Sd getP2Sd :: MetricsParams -> Double
+
 data Query = pure native ru.georgeee.bachelor.yarn.graph.Query where
     pure native new :: Word -> POS -> Query
 
@@ -48,8 +53,8 @@ data Dict = pure native ru.georgeee.bachelor.yarn.alignment.SimpleDict where
     translate :: Dict -> Word -> [[Word]]
     translate d w = map toList . toList $ translate' d w
 
-processNode' :: (MeasureMetrics -> [PreEdge v t] -> Double) -> Dict -> Mutable s (Repo v t) -> Mutable s (Node t v) -> ST s ()
-processNode' measure dict repo node = do
+processNode' :: (MetricsParams -> MeasureMetrics -> [PreEdge v t] -> Double) -> MetricsParams -> Dict -> Mutable s (Repo v t) -> Mutable s (Node t v) -> ST s ()
+processNode' measure mParams dict repo node = do
     pos <- Node.getPOS node
     let findNode = Repo.findNode repo . flip Query.new pos
     ws <- toList <$> Node.getWords node
@@ -60,7 +65,7 @@ processNode' measure dict repo node = do
                                  , totalPreedgeCount = length preEdges
                                  , origWordCount = length ws
                                  }
-        pes = (fmap . fmap) (measure metrics) $ HashMap.each preEdgesGrouped
+        pes = (fmap . fmap) (measure mParams metrics) $ HashMap.each preEdgesGrouped
     forM_ pes $ \(s, w) -> Node.addEdge node (mutable s) w
 
 toPreEdges :: [[[[ Node t v ]]]] -> [PreEdge t v]

@@ -28,9 +28,7 @@ public abstract class SynsetNode<T, V> {
 
     @Override
     public String toString() {
-        return "{id=" + getId() + ": " + getWords() + " edges="
-                + edges.entrySet().stream().map(e -> e.getKey().getId() + ": " + e.getValue()).collect(Collectors.toList())
-                + "}";
+        return "{id=" + getId() + ": " + getWords() + "}";
     }
 
     public enum POS {

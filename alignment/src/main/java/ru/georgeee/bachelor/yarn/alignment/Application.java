@@ -12,6 +12,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import ru.georgeee.bachelor.yarn.Yarn;
 import ru.georgeee.bachelor.yarn.graph.FregeHelper;
+import ru.georgeee.bachelor.yarn.graph.GraphVizHelper;
+import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 import ru.georgeee.bachelor.yarn.graph.SynsetNode;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 
@@ -19,17 +21,14 @@ import javax.annotation.PostConstruct;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"ru.georgeee.bachelor.yarn"})
 public class Application implements CommandLineRunner {
 
     @Value("${pwn.home}")
@@ -44,8 +43,17 @@ public class Application implements CommandLineRunner {
     @Value("${dict.ru_en}")
     private String ruEnDictPath;
 
+    @Value("${out.dot:out.dot}")
+    private String graphvizOutFile;
+
     @Autowired
     private DictFactory dictFactory;
+
+    @Autowired
+    private FregeHelper fregeHelper;
+
+    @Autowired
+    private GraphVizHelper graphVizHelper;
 
     private SimpleDict enRuDict;
     private SimpleDict ruEnDict;
@@ -90,18 +98,18 @@ public class Application implements CommandLineRunner {
         }
     }
 
-    private void testYarn2PWN2(String s) {
+    private void testYarn2PWN2(String s) throws IOException {
         PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
         YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
         List<Yarn.Word> wordDefs = yarn.getWord(s);
         for (Yarn.Word wordDef : wordDefs) {
             for (Yarn.WordSynsetEntry entry : wordDef.getSynsets()) {
                 SynsetNode<SynsetEntry, ISynset> node = yarnRepo.getNode(entry.getSynset());
-                FregeHelper.processNode(ruEnDict, pwnRepo, node);
+                fregeHelper.processNode(ruEnDict, pwnRepo, node);
             }
         }
         for (SynsetNode<ISynset, SynsetEntry> node : pwnRepo.getNodes()) {
-            FregeHelper.processNode(enRuDict, yarnRepo, node);
+            fregeHelper.processNode(enRuDict, yarnRepo, node);
         }
 //        for (SynsetNode<SynsetEntry, ISynset> node : yarnRepo.getNodes()) {
 //            FregeHelper.processNode(ruEnDict, pwnRepo, node);
@@ -109,8 +117,19 @@ public class Application implements CommandLineRunner {
 //        for (SynsetNode<ISynset, SynsetEntry> node : pwnRepo.getNodes()) {
 //            FregeHelper.processNode(enRuDict, yarnRepo, node);
 //        }
-        System.out.println(yarnRepo.getNodes().stream().filter(n -> !n.getEdges().isEmpty()).collect(Collectors.toList()));
-        System.out.println(pwnRepo.getNodes().stream().filter(n -> !n.getEdges().isEmpty()).collect(Collectors.toList()));
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile))) {
+            graphVizHelper.toGraph(yarnRepo, pwnRepo, bw);
+        }
+        System.out.println("Yarn nodes");
+        printRepo(yarnRepo);
+        System.out.println("PWN nodes");
+        printRepo(pwnRepo);
+    }
+
+    private <T, V> void printRepo(NodeRepository<T, V> repo) {
+        for (SynsetNode<T, V> node : repo.getNodes()) {
+            System.out.println("Node " + node);
+        }
     }
 
     public void testDictionary() throws IOException {

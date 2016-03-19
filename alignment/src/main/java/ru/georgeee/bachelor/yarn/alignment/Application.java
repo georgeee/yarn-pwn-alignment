@@ -50,11 +50,17 @@ public class Application implements CommandLineRunner {
     @Autowired
     private FregeHelper fregeHelper;
 
+    @Autowired
+    private MetricsParams params;
+
     private SimpleDict enRuDict;
     private SimpleDict ruEnDict;
 
     private Yarn yarn;
     private IDictionary pwnDict;
+
+    @Autowired
+    private GraphVizSettings gvSettings;
 
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
@@ -86,10 +92,47 @@ public class Application implements CommandLineRunner {
             String s;
             while ((s = br.readLine()) != null && !s.isEmpty()) {
                 s = s.trim();
-                System.out.println("EnRu: " + s + ":" + enRuDict.translate(s));
-                System.out.println("RuEn: " + s + ":" + ruEnDict.translate(s));
-                testOne(s);
+                if (s.charAt(0) == ':') {
+                    int index = s.indexOf('=');
+                    if (index == -1) {
+                        System.err.println("Wrong format");
+                    } else {
+                        String key = s.substring(1, index).trim();
+                        String value = s.substring(index + 1).trim();
+                        processParameter(key, value);
+                    }
+                } else {
+                    System.out.println("EnRu: " + s + ":" + enRuDict.translate(s));
+                    System.out.println("RuEn: " + s + ":" + ruEnDict.translate(s));
+                    testOne(s);
+                }
             }
+        }
+    }
+
+    private void processParameter(String key, String value) {
+        try {
+            switch (key) {
+                case "p1.mean":
+                    params.setP1Mean(Double.parseDouble(value));
+                    break;
+                case "p1.sd":
+                    params.setP1Sd(Double.parseDouble(value));
+                    break;
+                case "p2.sd":
+                    params.setP2Sd(Double.parseDouble(value));
+                    break;
+                case "gv.engine":
+                    gvSettings.setEngine(value);
+                    break;
+                case "gv.threshold":
+                    gvSettings.setThreshold(Double.parseDouble(value));
+                    break;
+                default:
+                    System.err.println("Unknown key: " + key);
+            }
+        } catch (IllegalArgumentException e) {
+            System.err.println("Error: " + e.getClass() + " " + e.getMessage());
         }
     }
 
@@ -106,7 +149,7 @@ public class Application implements CommandLineRunner {
         pwnRepo.getNodes().stream().forEach(node -> fregeHelper.processNode(enRuDict, yarnRepo, node));
         yarnRepo.getNodes().stream().forEach(node -> fregeHelper.processNode(ruEnDict, pwnRepo, node));
         try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile));
-             GraphVizBuilder builder = new GraphVizBuilder(bw)) {
+             GraphVizBuilder builder = new GraphVizBuilder(gvSettings, bw)) {
             for (SynsetNode<?, ?> n : origSynsets) {
                 builder.addNode(n);
             }

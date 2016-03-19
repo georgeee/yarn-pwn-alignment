@@ -1,11 +1,13 @@
 package ru.georgeee.bachelor.yarn.alignment;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
 @Getter
+@Setter
 public class MetricsParams {
     @Value("${metrics.p1.mean:0.5}")
     private double p1Mean;

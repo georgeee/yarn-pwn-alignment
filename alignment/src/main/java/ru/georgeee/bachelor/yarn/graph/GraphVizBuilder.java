@@ -8,14 +8,16 @@ import java.util.Map;
 import java.util.Set;
 
 public class GraphVizBuilder implements AutoCloseable {
+    private final GraphVizSettings settings;
     private final Appendable out;
     private final Set<SynsetNode<?, ?>> used = new HashSet<>();
     @Getter
     private final Set<SynsetNode<?, ?>> created = new HashSet<>();
 
-    public GraphVizBuilder(Appendable out) throws IOException {
+    public GraphVizBuilder(GraphVizSettings settings, Appendable out) throws IOException {
+        this.settings = settings;
         this.out = out;
-        out.append("graph synsets{\n layout = fdp;\n");
+        out.append("graph synsets{\n layout = " + settings.getEngine() + ";\n");
     }
 
     public <T, V> void addRepo(NodeRepository<T, V> repo) throws IOException {
@@ -25,7 +27,7 @@ public class GraphVizBuilder implements AutoCloseable {
     }
 
     public <T, V> void addNode(SynsetNode<T, V> from) throws IOException {
-        if(used.add(from)) {
+        if (used.add(from)) {
             for (Map.Entry<SynsetNode<V, T>, Double> e : from.getEdges().entrySet()) {
                 SynsetNode<V, T> to = e.getKey();
                 if (!used.contains(to)) {
@@ -40,6 +42,7 @@ public class GraphVizBuilder implements AutoCloseable {
 
     private <T, V> void addEdge(SynsetNode<T, V> from, SynsetNode<V, T> to, double weight1, double weight2) throws IOException {
         double weight = (weight1 + weight2) / 2;
+        if (weight < settings.getThreshold()) return;
         writeNodeDef(from);
         writeNodeDef(to);
         out

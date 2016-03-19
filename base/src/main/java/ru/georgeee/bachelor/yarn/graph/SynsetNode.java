@@ -5,12 +5,25 @@ import lombok.Getter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Getter
 public abstract class SynsetNode<T, V> {
     private final Map<SynsetNode<V, T>, Double> edges = new HashMap<>();
     private final T data;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SynsetNode<?, ?> that = (SynsetNode<?, ?>) o;
+        return Objects.equals(data, that.data);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(data);
+    }
 
     protected SynsetNode(T data) {
         this.data = data;

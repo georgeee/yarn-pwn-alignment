@@ -11,10 +11,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import ru.georgeee.bachelor.yarn.Yarn;
-import ru.georgeee.bachelor.yarn.graph.FregeHelper;
-import ru.georgeee.bachelor.yarn.graph.GraphVizHelper;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
+import ru.georgeee.bachelor.yarn.graph.*;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 
 import javax.annotation.PostConstruct;
@@ -25,8 +22,9 @@ import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @SpringBootApplication(scanBasePackages = {"ru.georgeee.bachelor.yarn"})
 public class Application implements CommandLineRunner {
@@ -51,9 +49,6 @@ public class Application implements CommandLineRunner {
 
     @Autowired
     private FregeHelper fregeHelper;
-
-    @Autowired
-    private GraphVizHelper graphVizHelper;
 
     private SimpleDict enRuDict;
     private SimpleDict ruEnDict;
@@ -93,37 +88,32 @@ public class Application implements CommandLineRunner {
                 s = s.trim();
                 System.out.println("EnRu: " + s + ":" + enRuDict.translate(s));
                 System.out.println("RuEn: " + s + ":" + ruEnDict.translate(s));
-                testYarn2PWN2(s);
+                testOne(s);
             }
         }
     }
 
-    private void testYarn2PWN2(String s) throws IOException {
+    private void testOne(String s) throws IOException {
         PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
         YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
-        List<Yarn.Word> wordDefs = yarn.getWord(s);
-        for (Yarn.Word wordDef : wordDefs) {
-            for (Yarn.WordSynsetEntry entry : wordDef.getSynsets()) {
-                SynsetNode<SynsetEntry, ISynset> node = yarnRepo.getNode(entry.getSynset());
-                fregeHelper.processNode(ruEnDict, pwnRepo, node);
+        List<SynsetNode<SynsetEntry, ISynset>> yarnSynsets = yarnRepo.findNode(new Query(s, null));
+        List<SynsetNode<ISynset, SynsetEntry>> pwnSynsets = pwnRepo.findNode(new Query(s, null));
+        List<SynsetNode<?, ?>> origSynsets = new ArrayList<>();
+        origSynsets.addAll(yarnSynsets);
+        origSynsets.addAll(pwnSynsets);
+        yarnSynsets.stream().forEach(node -> fregeHelper.processNode(ruEnDict, pwnRepo, node));
+        pwnSynsets.stream().forEach(node -> fregeHelper.processNode(enRuDict, yarnRepo, node));
+        pwnRepo.getNodes().stream().forEach(node -> fregeHelper.processNode(enRuDict, yarnRepo, node));
+        yarnRepo.getNodes().stream().forEach(node -> fregeHelper.processNode(ruEnDict, pwnRepo, node));
+        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile));
+             GraphVizBuilder builder = new GraphVizBuilder(bw)) {
+            for (SynsetNode<?, ?> n : origSynsets) {
+                builder.addNode(n);
             }
+            List<SynsetNode<?, ?>> created = new ArrayList<>(builder.getCreated());
+            Collections.sort(created, (s1, s2) -> s1.getId().compareTo(s2.getId()));
+            created.stream().forEach(System.out::println);
         }
-        for (SynsetNode<ISynset, SynsetEntry> node : pwnRepo.getNodes()) {
-            fregeHelper.processNode(enRuDict, yarnRepo, node);
-        }
-//        for (SynsetNode<SynsetEntry, ISynset> node : yarnRepo.getNodes()) {
-//            FregeHelper.processNode(ruEnDict, pwnRepo, node);
-//        }
-//        for (SynsetNode<ISynset, SynsetEntry> node : pwnRepo.getNodes()) {
-//            FregeHelper.processNode(enRuDict, yarnRepo, node);
-//        }
-        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile))) {
-            graphVizHelper.toGraph(yarnRepo, pwnRepo, bw);
-        }
-        System.out.println("Yarn nodes");
-        printRepo(yarnRepo);
-        System.out.println("PWN nodes");
-        printRepo(pwnRepo);
     }
 
     private <T, V> void printRepo(NodeRepository<T, V> repo) {

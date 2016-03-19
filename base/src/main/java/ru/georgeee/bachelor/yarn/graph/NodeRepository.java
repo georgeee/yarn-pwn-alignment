@@ -22,6 +22,8 @@ public abstract class NodeRepository<T, V> {
 
     @Override
     public String toString() {
-        return getNodes().toString();
+        List<SynsetNode<T, V>> list = new ArrayList<>(getNodes());
+        Collections.sort(list, (l, r) -> l.getId().compareTo(r.getId()));
+        return list.toString();
     }
 }

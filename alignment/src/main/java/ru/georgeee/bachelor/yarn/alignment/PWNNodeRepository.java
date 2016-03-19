@@ -6,6 +6,7 @@ import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 import ru.georgeee.bachelor.yarn.graph.Query;
 import ru.georgeee.bachelor.yarn.graph.SynsetNode;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,7 +20,19 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
 
     @Override
     public List<SynsetNode<ISynset, V>> findNode(Query query) {
-        IIndexWord idxWord = pwnDict.getIndexWord(query.getWord(), convertPOS(query.getPos()));
+        if (query.getPos() == null) {
+            List<SynsetNode<ISynset, V>> result = new ArrayList<>();
+            for (SynsetNode.POS pos : SynsetNode.POS.values()) {
+                result.addAll(findNodeImpl(query.getWord(), pos));
+            }
+            return result;
+        } else {
+            return findNodeImpl(query.getWord(), query.getPos());
+        }
+    }
+
+    private List<SynsetNode<ISynset, V>> findNodeImpl(String word, SynsetNode.POS pos) {
+        IIndexWord idxWord = pwnDict.getIndexWord(word, convertPOS(pos));
         if (idxWord == null) {
             return Collections.emptyList();
         } else {

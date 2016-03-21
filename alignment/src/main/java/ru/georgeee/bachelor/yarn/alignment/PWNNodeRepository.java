@@ -10,6 +10,7 @@ import ru.georgeee.bachelor.yarn.graph.SynsetNode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
@@ -68,10 +69,18 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         return null;
     }
 
+    private ISynset getSynset(String id){
+        try {
+            return pwnDict.getSynset(SynsetID.parseSynsetID(id));
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
     @Override
     protected SynsetNode<ISynset, V> createNode(String id) {
-        ISynset synset = pwnDict.getSynset(SynsetID.parseSynsetID(id));
-        if(synset == null) return null;
+        ISynset synset = getSynset(id);
+        if (synset == null) return null;
         return new SynsetNode<ISynset, V>(synset) {
             @Override
             public String getId() {
@@ -79,9 +88,9 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
             }
 
             @Override
-            public List<String> getWords() {
+            public Set<String> getWords() {
                 return synset.getWords().stream()
-                        .map(w -> w.getLemma().replace('_', ' ')).collect(Collectors.toList());
+                        .map(w -> w.getLemma().replace('_', ' ')).collect(Collectors.toSet());
             }
 
             @Override

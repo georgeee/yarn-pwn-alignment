@@ -9,8 +9,9 @@ import ru.georgeee.bachelor.yarn.graph.SynsetNode;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 import ru.georgeee.bachelor.yarn.xml.WordEntry;
 
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
@@ -41,8 +42,8 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
             }
 
             @Override
-            public List<String> getWords() {
-                List<String> words = new ArrayList<>();
+            public Set<String> getWords() {
+                Set<String> words = new HashSet<>();
                 for (SynsetEntry.Word w : synset.getWord()) {
                     if (w == null || w.getRef() == null) {
                         log.warn("Discrepancy in data: {}", Yarn.toString(synset));

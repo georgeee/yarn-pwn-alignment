@@ -26,15 +26,14 @@ public class GraphVizBuilder implements AutoCloseable {
 
     public <T, V> void addNode(SynsetNode<T, V> from) throws IOException {
         if (used.add(from)) {
-            for (Map.Entry<SynsetNode<V, T>, Double> e : from.getEdges().entrySet()) {
+            for (Map.Entry<SynsetNode<V, T>, TranslationLink> e : from.getEdges().entrySet()) {
                 SynsetNode<V, T> to = e.getKey();
                 if (!used.contains(to)) {
-                    double weight1 = e.getValue();
-                    double weight2 = to.getEdges().getOrDefault(from, 0.0);
+                    TranslationLink link2 = to.getEdges().get(from);
                     if (from.getId().compareTo(to.getId()) < 0) {
-                        addEdge(from, to, weight1, weight2);
+                        addEdge(from, to, e.getValue(), link2);
                     } else {
-                        addEdge(to, from, weight2, weight1);
+                        addEdge(to, from, link2, e.getValue());
                     }
                 }
             }
@@ -42,7 +41,12 @@ public class GraphVizBuilder implements AutoCloseable {
     }
 
 
-    private <T, V> void addEdge(SynsetNode<T, V> from, SynsetNode<V, T> to, double weight1, double weight2) throws IOException {
+    private <T, V> void addEdge(SynsetNode<T, V> from, SynsetNode<V, T> to, TranslationLink link1, TranslationLink link2) throws IOException {
+        double weight1 = link1 == null ? 0.0 : link1.getWeight();
+        double weight2 = link2 == null ? 0.0 : link2.getWeight();
+        if ((weight1 == 0 || weight2 == 0) && settings.isRequireBoth()) {
+            return;
+        }
         double weight = (weight1 + weight2) / 2;
         if (weight < settings.getThreshold()) return;
         writeNodeDef(from);

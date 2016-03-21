@@ -17,9 +17,5 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.theoryinpractise.frege</groupId>
-            <artifactId>frege</artifactId>
-        </dependency>
     </dependencies>
 </project>

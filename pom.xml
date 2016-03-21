@@ -13,7 +13,6 @@
 
     <modules>
         <module>base</module>
-        <module>frege</module>
         <!--<module>yarn-xml</module>-->
         <module>alignment</module>
     </modules>
@@ -21,7 +20,6 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <_basedir>${project.basedir}</_basedir>
-        <frege.version>3.23.888-g4e22ab6</frege.version>
     </properties>
 
     <dependencies>
@@ -52,18 +50,8 @@
                 <version>3.6</version>
             </dependency>
             <dependency>
-                <groupId>com.theoryinpractise.frege</groupId>
-                <artifactId>frege</artifactId>
-                <version>${frege.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>ru.georgeee.bachelor.yarn</groupId>
                 <artifactId>base</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.georgeee.bachelor.yarn</groupId>
-                <artifactId>frege</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -109,11 +97,6 @@
         </profile>
     </profiles>
     <build>
-        <pluginManagement>
-            <plugins>
-
-            </plugins>
-        </pluginManagement>
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>

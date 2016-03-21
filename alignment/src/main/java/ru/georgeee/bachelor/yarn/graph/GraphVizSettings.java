@@ -12,6 +12,9 @@ public class GraphVizSettings {
     @Value("${gv.engine:fdp}")
     private String engine;
 
-    @Value("${gv.threshold:0.51}")
+    @Value("${gv.threshold:0.01}")
     private double threshold;
+
+    @Value("${gv.requireBoth:true}")
+    private boolean requireBoth;
 }

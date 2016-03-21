@@ -4,6 +4,8 @@ package ru.georgeee.bachelor.yarn.alignment;
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.*;
+import org.apache.commons.lang3.BooleanUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -19,12 +21,11 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @SpringBootApplication(scanBasePackages = {"ru.georgeee.bachelor.yarn"})
 public class Application implements CommandLineRunner {
@@ -46,9 +47,6 @@ public class Application implements CommandLineRunner {
 
     @Autowired
     private DictFactory dictFactory;
-
-    @Autowired
-    private FregeHelper fregeHelper;
 
     @Autowired
     private MetricsParams params;
@@ -113,15 +111,49 @@ public class Application implements CommandLineRunner {
                         List<SynsetNode<ISynset, SynsetEntry>> pwnSynsets = findNode(pwnRepo, s);
                         origSynsets.addAll(yarnSynsets);
                         origSynsets.addAll(pwnSynsets);
-                        yarnSynsets.stream().forEach(node -> fregeHelper.processNode(ruEnDict, pwnRepo, node));
-                        pwnSynsets.stream().forEach(node -> fregeHelper.processNode(enRuDict, yarnRepo, node));
+                        yarnSynsets.stream().forEach(node -> processNode(ruEnDict, pwnRepo, node));
+                        pwnSynsets.stream().forEach(node -> processNode(enRuDict, yarnRepo, node));
                     }
-                    pwnRepo.getNodes().stream().forEach(node -> fregeHelper.processNode(enRuDict, yarnRepo, node));
-                    yarnRepo.getNodes().stream().forEach(node -> fregeHelper.processNode(ruEnDict, pwnRepo, node));
+                    pwnRepo.getNodes().stream().forEach(node -> processNode(enRuDict, yarnRepo, node));
+                    yarnRepo.getNodes().stream().forEach(node -> processNode(ruEnDict, pwnRepo, node));
                     printSynsets(origSynsets);
                 }
             }
         }
+    }
+
+    private <T, V> void processNode(SimpleDict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
+        Map<SynsetNode<V, T>, TranslationLink> links = new HashMap<>();
+        for (String word : node.getWords()) {
+            List<List<String>> translations = dict.translate(word);
+            for (List<String> translation : translations) {
+                Set<SynsetNode<V, T>> transSynsets = new HashSet<>();
+                translation.stream().map(w -> repo.findNode(new Query(w, node.getPOS())))
+                        .forEach(transSynsets::addAll);
+                transSynsets.forEach(s -> {
+                    TranslationLink link = composeLink(word, s, translation);
+                    if (link.getWeight() >= params.getCutTh()) {
+                        TranslationLink oldLink = links.get(s);
+                        if (oldLink == null || oldLink.getWeight() < link.getWeight()) {
+                            links.put(s, link);
+                        }
+                    }
+                });
+            }
+        }
+        node.getEdges().putAll(links);
+    }
+
+    private <T, V> TranslationLink composeLink(String word, SynsetNode<T, V> synset, List<String> translation) {
+        Set<String> synsetWords = synset.getWords();
+        int commonCount = 0;
+        for (String t : translation) {
+            if (synsetWords.contains(t)) {
+                commonCount++;
+            }
+        }
+        double weight = ((double) commonCount) / (synsetWords.size() + translation.size());
+        return new TranslationLink(word, translation, weight);
     }
 
     private <T, V> List<SynsetNode<T, V>> findNode(NodeRepository<T, V> repo, String s) {
@@ -134,26 +166,30 @@ public class Application implements CommandLineRunner {
 
     private void processParameter(String key, String value) {
         try {
-            switch (key) {
-                case "p1.mean":
-                    params.setP1Mean(Double.parseDouble(value));
+            int index = key.indexOf('.');
+            String prefix = key.substring(0, index);
+            String rest = key.substring(index + 1);
+            switch (prefix) {
+                case "mp":
+                    BeanUtils.getPropertyDescriptor(MetricsParams.class, rest).getWriteMethod().invoke(params, Double.parseDouble(value));
                     break;
-                case "p1.sd":
-                    params.setP1Sd(Double.parseDouble(value));
-                    break;
-                case "p2.sd":
-                    params.setP2Sd(Double.parseDouble(value));
-                    break;
-                case "gv.engine":
-                    gvSettings.setEngine(value);
-                    break;
-                case "gv.threshold":
-                    gvSettings.setThreshold(Double.parseDouble(value));
+                case "gv":
+                    switch (rest) {
+                        case "engine":
+                            gvSettings.setEngine(value);
+                            break;
+                        case "reqBoth":
+                            gvSettings.setRequireBoth(Boolean.parseBoolean(value));
+                            break;
+                        case "threshold":
+                            gvSettings.setThreshold(Double.parseDouble(value));
+                            break;
+                    }
                     break;
                 default:
                     System.err.println("Unknown key: " + key);
             }
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
             System.err.println("Error: " + e.getClass() + " " + e.getMessage());
         }
     }

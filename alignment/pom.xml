@@ -24,10 +24,6 @@
         </dependency>
         <dependency>
             <groupId>ru.georgeee.bachelor.yarn</groupId>
-            <artifactId>frege</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ru.georgeee.bachelor.yarn</groupId>
             <artifactId>base</artifactId>
         </dependency>
         <dependency>

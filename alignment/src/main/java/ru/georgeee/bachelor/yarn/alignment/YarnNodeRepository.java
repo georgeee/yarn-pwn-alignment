@@ -31,19 +31,21 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
     }
 
     @Override
-    protected SynsetNode<SynsetEntry, V> createNode(SynsetEntry data) {
-        return new SynsetNode<SynsetEntry, V>(data) {
+    protected SynsetNode<SynsetEntry, V> createNode(String id) {
+        SynsetEntry synset = yarn.getSynset(id);
+        if(synset == null) return null;
+        return new SynsetNode<SynsetEntry, V>(synset) {
             @Override
             public String getId() {
-                return data.getId();
+                return synset.getId();
             }
 
             @Override
             public List<String> getWords() {
                 List<String> words = new ArrayList<>();
-                for (SynsetEntry.Word w : data.getWord()) {
+                for (SynsetEntry.Word w : synset.getWord()) {
                     if (w == null || w.getRef() == null) {
-                        log.warn("Discrepancy in data: {}", Yarn.toString(data));
+                        log.warn("Discrepancy in data: {}", Yarn.toString(synset));
                     } else {
                         words.add(((WordEntry) w.getRef()).getWord());
                     }
@@ -53,7 +55,13 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
 
             @Override
             public POS getPOS() {
-                return ru.georgeee.bachelor.yarn.Yarn.getPOS((WordEntry) data.getWord().get(0).getRef());
+                for(SynsetEntry.Word word : synset.getWord()){
+                    if(word.getRef() != null){
+                        return ru.georgeee.bachelor.yarn.Yarn.getPOS((WordEntry) word.getRef());
+                    }
+                }
+                log.warn("Discrepancy in data: synset without a word: " + this);
+                return POS.NOUN;
             }
 
             @Override

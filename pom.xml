@@ -100,6 +100,14 @@
         </dependencies>
     </dependencyManagement>
 
+    <profiles>
+        <profile>
+            <id>yarn-xml</id>
+            <modules>
+                <module>yarn-xml</module>
+            </modules>
+        </profile>
+    </profiles>
     <build>
         <pluginManagement>
             <plugins>

@@ -3,9 +3,7 @@ package ru.georgeee.bachelor.yarn.graph;
 import lombok.Getter;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class GraphVizBuilder implements AutoCloseable {
     private final GraphVizSettings settings;
@@ -33,7 +31,11 @@ public class GraphVizBuilder implements AutoCloseable {
                 if (!used.contains(to)) {
                     double weight1 = e.getValue();
                     double weight2 = to.getEdges().getOrDefault(from, 0.0);
-                    addEdge(from, to, weight1, weight2);
+                    if (from.getId().compareTo(to.getId()) < 0) {
+                        addEdge(from, to, weight1, weight2);
+                    } else {
+                        addEdge(to, from, weight2, weight1);
+                    }
                 }
             }
         }
@@ -49,10 +51,10 @@ public class GraphVizBuilder implements AutoCloseable {
                 .append(gvEscapeId(from.getId()))
                 .append(" -- ")
                 .append(gvEscapeId(to.getId()))
-                .append(" [color=grey")
+                .append(" [fontsize=8, color=grey")
                 .append(String.valueOf((int) ((1 - weight) * 100)))
                 .append(", label=\"")
-                .append(String.format("%.2f", weight))
+                .append(String.format("%.2f [%.2f, %.2f]", weight, weight1, weight2))
                 .append("\"];\n");
     }
 
@@ -64,9 +66,24 @@ public class GraphVizBuilder implements AutoCloseable {
         if (!created.add(node)) return;
         out
                 .append(gvEscapeId(node.getId()))
-                .append(" [label=\"")
+                .append(" [fontsize=7, label=\"")
                 .append(node.getId())
-                .append("\"];\n");
+                .append('\n');
+        printSeparated(out, node.getWords(), '\n', 5);
+        out.append("\"];\n");
+    }
+
+    private void printSeparated(Appendable out, Collection<String> words, char sepBy, int sepAt) throws IOException {
+        out.append('[');
+        int i = 0;
+        for (String word : words) {
+            out.append(word).append(", ");
+            if (++i == sepAt) {
+                out.append(sepBy);
+                i = 0;
+            }
+        }
+        out.append(']');
     }
 
     @Override

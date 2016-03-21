@@ -9,9 +9,9 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 public class GraphVizSettings {
-    @Value("${gv.engine:sfdp}")
+    @Value("${gv.engine:fdp}")
     private String engine;
 
-    @Value("${gv.threshold:0.0}")
+    @Value("${gv.threshold:0.51}")
     private double threshold;
 }

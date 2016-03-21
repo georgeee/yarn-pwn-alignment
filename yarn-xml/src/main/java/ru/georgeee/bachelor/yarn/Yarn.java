@@ -13,13 +13,12 @@ import java.util.stream.Collectors;
 public class Yarn {
     private static final Logger log = LoggerFactory.getLogger(Yarn.class);
     private final ru.georgeee.bachelor.yarn.xml.Yarn data;
-    private final Map<String, List<Word>> wordByValueMap;
-    private final Map<String, List<WordSynsetEntry>> synsetByWordIdMap;
+    private final Map<String, List<Word>> wordByValueMap = new HashMap<>();
+    private final Map<String, List<WordSynsetEntry>> synsetsByWordIdMap = new HashMap<>();
+    private final Map<String, SynsetEntry> synsetByIdMap = new HashMap<>();
 
     public Yarn(ru.georgeee.bachelor.yarn.xml.Yarn data) {
         this.data = data;
-        wordByValueMap = new HashMap<>();
-        synsetByWordIdMap = new HashMap<>();
         init();
     }
 
@@ -29,14 +28,19 @@ public class Yarn {
             wordByValueMap.get(word.getWord()).add(new Word(word));
         }
         for (SynsetEntry synset : data.getSynsets().getSynsetEntry()) {
+            synsetByIdMap.put(synset.getId(), synset);
             for (int i = 0; i < synset.getWord().size(); ++i) {
                 SynsetEntry.Word word = synset.getWord().get(i);
                 WordEntry wordEntry = (WordEntry) word.getRef();
                 if (wordEntry == null) continue;
-                synsetByWordIdMap.computeIfAbsent(wordEntry.getId(), k -> new ArrayList<>());
-                synsetByWordIdMap.get(wordEntry.getId()).add(new WordSynsetEntry(i, synset));
+                synsetsByWordIdMap.computeIfAbsent(wordEntry.getId(), k -> new ArrayList<>());
+                synsetsByWordIdMap.get(wordEntry.getId()).add(new WordSynsetEntry(i, synset));
             }
         }
+    }
+
+    public SynsetEntry getSynset(String id){
+        return synsetByIdMap.get(id);
     }
 
     public List<Word> getWord(String value) {
@@ -73,7 +77,7 @@ public class Yarn {
         }
 
         public List<WordSynsetEntry> getSynsets() {
-            return synsetByWordIdMap.getOrDefault(getId(), Collections.emptyList());
+            return synsetsByWordIdMap.getOrDefault(getId(), Collections.emptyList());
         }
 
         public SynsetNode.POS getPOS() {

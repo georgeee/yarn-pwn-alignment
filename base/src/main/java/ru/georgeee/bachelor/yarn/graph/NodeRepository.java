@@ -6,8 +6,11 @@ public abstract class NodeRepository<T, V> {
     private final Map<String, SynsetNode<T, V>> storage = new HashMap<>();
 
     public SynsetNode<T, V> getNode(T data) {
-        String id = getId(data);
-        return storage.computeIfAbsent(id, _id -> createNode(data));
+        return getNodeById(getId(data));
+    }
+
+    public SynsetNode<T, V> getNodeById(String id) {
+        return storage.computeIfAbsent(id, this::createNode);
     }
 
     public abstract List<SynsetNode<T, V>> findNode(Query query);
@@ -16,7 +19,7 @@ public abstract class NodeRepository<T, V> {
         return storage.values();
     }
 
-    protected abstract SynsetNode<T, V> createNode(T data);
+    protected abstract SynsetNode<T, V> createNode(String id);
 
     protected abstract String getId(T data);
 

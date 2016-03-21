@@ -2,6 +2,7 @@ package ru.georgeee.bachelor.yarn.alignment;
 
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.*;
+import org.apache.commons.lang3.StringUtils;
 import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 import ru.georgeee.bachelor.yarn.graph.Query;
 import ru.georgeee.bachelor.yarn.graph.SynsetNode;
@@ -20,6 +21,9 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
 
     @Override
     public List<SynsetNode<ISynset, V>> findNode(Query query) {
+        if (StringUtils.isEmpty(query.getWord())) {
+            return Collections.emptyList();
+        }
         if (query.getPos() == null) {
             List<SynsetNode<ISynset, V>> result = new ArrayList<>();
             for (SynsetNode.POS pos : SynsetNode.POS.values()) {
@@ -65,22 +69,24 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
     }
 
     @Override
-    protected SynsetNode<ISynset, V> createNode(ISynset data) {
-        return new SynsetNode<ISynset, V>(data) {
+    protected SynsetNode<ISynset, V> createNode(String id) {
+        ISynset synset = pwnDict.getSynset(SynsetID.parseSynsetID(id));
+        if(synset == null) return null;
+        return new SynsetNode<ISynset, V>(synset) {
             @Override
             public String getId() {
-                return data.getID().toString();
+                return synset.getID().toString();
             }
 
             @Override
             public List<String> getWords() {
-                return data.getWords().stream()
-                        .map(IWord::getLemma).collect(Collectors.toList());
+                return synset.getWords().stream()
+                        .map(w -> w.getLemma().replace('_', ' ')).collect(Collectors.toList());
             }
 
             @Override
             public POS getPOS() {
-                edu.mit.jwi.item.POS pos = data.getPOS();
+                edu.mit.jwi.item.POS pos = synset.getPOS();
                 if (pos != null) {
                     switch (pos) {
                         case NOUN:

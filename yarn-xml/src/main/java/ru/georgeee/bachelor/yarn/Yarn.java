@@ -3,7 +3,6 @@ package ru.georgeee.bachelor.yarn;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 import ru.georgeee.bachelor.yarn.xml.WordEntry;
 
@@ -39,7 +38,7 @@ public class Yarn {
         }
     }
 
-    public SynsetEntry getSynset(String id){
+    public SynsetEntry getSynset(String id) {
         return synsetByIdMap.get(id);
     }
 
@@ -47,18 +46,6 @@ public class Yarn {
         return wordByValueMap.getOrDefault(value, Collections.emptyList());
     }
 
-    public static SynsetNode.POS getPOS(WordEntry wordEntry) {
-        String grammar = wordEntry.getGrammar();
-        if (grammar.indexOf('n') != -1) {
-            return SynsetNode.POS.NOUN;
-        } else if (grammar.indexOf('v') != -1) {
-            return SynsetNode.POS.VERB;
-        } else if (grammar.indexOf('a') != -1) {
-            return SynsetNode.POS.ADJECTIVE;
-        }
-        log.warn("Unknown grammar {} for {} (can't extract POS)", grammar, toString(wordEntry));
-        return null;
-    }
 
     @Getter
     public class Word {
@@ -78,10 +65,6 @@ public class Yarn {
 
         public List<WordSynsetEntry> getSynsets() {
             return synsetsByWordIdMap.getOrDefault(getId(), Collections.emptyList());
-        }
-
-        public SynsetNode.POS getPOS() {
-            return Yarn.getPOS(wordEntry);
         }
 
         public String toString() {
@@ -120,14 +103,14 @@ public class Yarn {
                 .collect(Collectors.toList()) + "}";
     }
 
-    private static String toString(SynsetEntry.Word word) {
+    public static String toString(SynsetEntry.Word word) {
         if (word == null) return "null";
         WordEntry ref = (WordEntry) word.getRef();
 //        return "{" + toString(ref) + " def=" + word.getDefinition().stream().map(SynsetEntry.Word.Definition::getValue).collect(Collectors.toList()) + "}";
         return toString(ref);
     }
 
-    private static String toString(WordEntry ref) {
+    public static String toString(WordEntry ref) {
         if (ref == null) return "null";
         return "{ " + ref.getId() + " : " + ref.getWord() + " (" + ref.getGrammar() + ") }";
     }

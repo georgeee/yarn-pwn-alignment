@@ -1,6 +1,7 @@
 package ru.georgeee.bachelor.yarn.graph;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -8,7 +9,8 @@ import java.util.List;
 public class TranslationLink {
     private final String word;
     private final List<String> translationMeaning;
-    private final double weight;
+    @Setter
+    private double weight;
 
     public TranslationLink(String word, List<String> translationMeaning, double weight) {
         this.word = word;

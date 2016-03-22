@@ -51,6 +51,9 @@ public class Application implements CommandLineRunner {
     @Autowired
     private MetricsParams params;
 
+    @Autowired
+    private Metrics metrics;
+
     private SimpleDict enRuDict;
     private SimpleDict ruEnDict;
 
@@ -111,49 +114,15 @@ public class Application implements CommandLineRunner {
                         List<SynsetNode<ISynset, SynsetEntry>> pwnSynsets = findNode(pwnRepo, s);
                         origSynsets.addAll(yarnSynsets);
                         origSynsets.addAll(pwnSynsets);
-                        yarnSynsets.stream().forEach(node -> processNode(ruEnDict, pwnRepo, node));
-                        pwnSynsets.stream().forEach(node -> processNode(enRuDict, yarnRepo, node));
+                        yarnSynsets.stream().forEach(node -> metrics.processNode(ruEnDict, pwnRepo, node));
+                        pwnSynsets.stream().forEach(node -> metrics.processNode(enRuDict, yarnRepo, node));
                     }
-                    pwnRepo.getNodes().stream().forEach(node -> processNode(enRuDict, yarnRepo, node));
-                    yarnRepo.getNodes().stream().forEach(node -> processNode(ruEnDict, pwnRepo, node));
+                    pwnRepo.getNodes().stream().forEach(node -> metrics.processNode(enRuDict, yarnRepo, node));
+                    yarnRepo.getNodes().stream().forEach(node -> metrics.processNode(ruEnDict, pwnRepo, node));
                     printSynsets(origSynsets);
                 }
             }
         }
-    }
-
-    private <T, V> void processNode(SimpleDict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
-        Map<SynsetNode<V, T>, TranslationLink> links = new HashMap<>();
-        for (String word : node.getWords()) {
-            List<List<String>> translations = dict.translate(word);
-            for (List<String> translation : translations) {
-                Set<SynsetNode<V, T>> transSynsets = new HashSet<>();
-                translation.stream().map(w -> repo.findNode(new Query(w, node.getPOS())))
-                        .forEach(transSynsets::addAll);
-                transSynsets.forEach(s -> {
-                    TranslationLink link = composeLink(word, s, translation);
-                    if (link.getWeight() >= params.getCutTh()) {
-                        TranslationLink oldLink = links.get(s);
-                        if (oldLink == null || oldLink.getWeight() < link.getWeight()) {
-                            links.put(s, link);
-                        }
-                    }
-                });
-            }
-        }
-        node.getEdges().putAll(links);
-    }
-
-    private <T, V> TranslationLink composeLink(String word, SynsetNode<T, V> synset, List<String> translation) {
-        Set<String> synsetWords = synset.getWords();
-        int commonCount = 0;
-        for (String t : translation) {
-            if (synsetWords.contains(t)) {
-                commonCount++;
-            }
-        }
-        double weight = ((double) commonCount) / (synsetWords.size() + translation.size());
-        return new TranslationLink(word, translation, weight);
     }
 
     private <T, V> List<SynsetNode<T, V>> findNode(NodeRepository<T, V> repo, String s) {
@@ -178,11 +147,14 @@ public class Application implements CommandLineRunner {
                         case "engine":
                             gvSettings.setEngine(value);
                             break;
-                        case "reqBoth":
-                            gvSettings.setRequireBoth(Boolean.parseBoolean(value));
-                            break;
-                        case "threshold":
+                        case "th":
                             gvSettings.setThreshold(Double.parseDouble(value));
+                            break;
+                        case "mTh":
+                            gvSettings.setMeanThreshold(Double.parseDouble(value));
+                            break;
+                        case "out":
+                            graphvizOutFile = value;
                             break;
                     }
                     break;

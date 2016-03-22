@@ -15,10 +15,6 @@
             <groupId>edu.mit</groupId>
             <artifactId>jwi</artifactId>
         </dependency>
-        <dependency>
-            <groupId>ru.georgeee.bachelor.yarn</groupId>
-            <artifactId>base</artifactId>
-        </dependency>
     </dependencies>
 
     <build>
@@ -28,18 +24,6 @@
                 <artifactId>download-maven-plugin</artifactId>
                 <version>1.2.1</version>
                 <executions>
-                    <!--<execution>-->
-                    <!--<id>download-yarn</id>-->
-                    <!--<phase>generate-resources</phase>-->
-                    <!--<goals>-->
-                    <!--<goal>wget</goal>-->
-                    <!--</goals>-->
-                    <!--<configuration>-->
-                    <!--<url>https://russianword.net/yarn.xml</url>-->
-                    <!--<outputDirectory>yarn</outputDirectory>-->
-                    <!--<outputFileName>yarn.xml</outputFileName>-->
-                    <!--</configuration>-->
-                    <!--</execution>-->
                     <execution>
                         <id>download-yarn-xsd</id>
                         <phase>generate-sources</phase>
@@ -52,18 +36,6 @@
                             <outputFileName>yarn.xsd</outputFileName>
                         </configuration>
                     </execution>
-                    <!--<execution>-->
-                    <!--<id>download-pwn</id>-->
-                    <!--<phase>generate-resources</phase>-->
-                    <!--<goals>-->
-                    <!--<goal>wget</goal>-->
-                    <!--</goals>-->
-                    <!--<configuration>-->
-                    <!--<unpack>true</unpack>-->
-                    <!--<url>http://wordnetcode.princeton.edu/3.0/WNdb-3.0.tar.gz</url>-->
-                    <!--<outputDirectory>pwn</outputDirectory>-->
-                    <!--</configuration>-->
-                    <!--</execution>-->
                 </executions>
             </plugin>
             <plugin>

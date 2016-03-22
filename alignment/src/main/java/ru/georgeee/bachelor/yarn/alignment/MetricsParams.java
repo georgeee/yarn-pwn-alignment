@@ -9,12 +9,10 @@ import org.springframework.stereotype.Component;
 @Getter
 @Setter
 public class MetricsParams {
-//    @Value("${metrics.p1.mean:0.5}")
-//    private double p1Mean;
-//    @Value("${metrics.p1.sd:0.2}")
-//    private double p1Sd;
-//    @Value("${metrics.p2.sd:0.2}")
-//    private double p2Sd;
-    @Value("${metrics.cutTh:0.0}")
-    private double cutTh;
+    @Value("${metrics.p1.mean:0.5}")
+    private double p1Mean;
+    @Value("${metrics.p1.sd:0.2}")
+    private double p1Sd;
+    @Value("${metrics.p2.sd:0.2}")
+    private double p2Sd;
 }

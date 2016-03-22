@@ -24,13 +24,53 @@
         </dependency>
         <dependency>
             <groupId>ru.georgeee.bachelor.yarn</groupId>
-            <artifactId>base</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ru.georgeee.bachelor.yarn</groupId>
             <artifactId>yarn-xml</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+        </dependency>
     </dependencies>
+    <profiles>
+        <profile>
+            <id>download</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.googlecode.maven-download-plugin</groupId>
+                        <artifactId>download-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>download-yarn</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <url>https://russianword.net/yarn.xml</url>
+                                    <outputDirectory>../yarn</outputDirectory>
+                                    <outputFileName>yarn.xml</outputFileName>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>download-pwn</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <unpack>true</unpack>
+                                    <url>http://wordnetcode.princeton.edu/wn3.1.dict.tar.gz</url>
+                                    <outputDirectory>../pwn</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
     <build>
         <plugins>
             <plugin>

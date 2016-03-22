@@ -15,6 +15,6 @@ public class GraphVizSettings {
     @Value("${gv.threshold:0.01}")
     private double threshold;
 
-    @Value("${gv.requireBoth:true}")
-    private boolean requireBoth;
+    @Value("${gv.mThreshold:0.01}")
+    private double meanThreshold;
 }

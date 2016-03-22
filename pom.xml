@@ -12,7 +12,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>base</module>
         <!--<module>yarn-xml</module>-->
         <module>alignment</module>
     </modules>
@@ -48,11 +47,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-math3</artifactId>
                 <version>3.6</version>
-            </dependency>
-            <dependency>
-                <groupId>ru.georgeee.bachelor.yarn</groupId>
-                <artifactId>base</artifactId>
-                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>ru.georgeee.bachelor.yarn</groupId>

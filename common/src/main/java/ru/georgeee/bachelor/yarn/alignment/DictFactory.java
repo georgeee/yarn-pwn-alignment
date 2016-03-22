@@ -18,7 +18,6 @@ public class DictFactory {
                 if(wordPos == null){
                     return Collections.emptyList();
                 }
-//                System.err.println(wordPos.getEntry());
                 return wordPos.getTranslations();
             };
         }

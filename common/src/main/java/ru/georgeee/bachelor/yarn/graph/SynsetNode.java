@@ -26,6 +26,8 @@ public abstract class SynsetNode<T, V> {
         this.data = data;
     }
 
+    public abstract String getGloss();
+
     public abstract String getId();
 
     public abstract Set<String> getWords();
@@ -34,7 +36,7 @@ public abstract class SynsetNode<T, V> {
 
     @Override
     public String toString() {
-        return "{id=" + getId() + ": " + getWords() + "}";
+        return "{id=" + getId() + ": " + getWords() + " (" + getGloss() + ")}";
     }
 
     public enum POS {

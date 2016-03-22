@@ -4,7 +4,6 @@ package ru.georgeee.bachelor.yarn.alignment;
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.*;
-import org.apache.commons.lang3.BooleanUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,15 +16,15 @@ import ru.georgeee.bachelor.yarn.graph.*;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 
 import javax.annotation.PostConstruct;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @SpringBootApplication(scanBasePackages = {"ru.georgeee.bachelor.yarn"})
 public class Application implements CommandLineRunner {
@@ -42,7 +41,7 @@ public class Application implements CommandLineRunner {
     @Value("${dict.ru_en}")
     private String ruEnDictPath;
 
-    @Value("${out.dot:out.dot}")
+    @Value("${gv.out:out.dot}")
     private String graphvizOutFile;
 
     @Autowired
@@ -69,20 +68,11 @@ public class Application implements CommandLineRunner {
         SpringApplication.run(Application.class, args);
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> T unmarshal(Class<T> docClass, InputStream inputStream)
-            throws JAXBException {
-        String packageName = docClass.getPackage().getName();
-        JAXBContext jc = JAXBContext.newInstance(packageName);
-        Unmarshaller u = jc.createUnmarshaller();
-        return (T) u.unmarshal(inputStream);
-    }
-
     @PostConstruct
     private void init() throws IOException, JAXBException {
         enRuDict = dictFactory.getDict(enRuDictPath);
         ruEnDict = dictFactory.getDict(ruEnDictPath);
-        yarn = new Yarn(unmarshal(ru.georgeee.bachelor.yarn.xml.Yarn.class, Files.newInputStream(Paths.get(yarnXmlPath))));
+        yarn = Yarn.create(Paths.get(yarnXmlPath));
         pwnDict = new Dictionary(new URL("file", null, pwnHomePath));
         pwnDict.open();
     }

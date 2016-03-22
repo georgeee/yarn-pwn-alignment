@@ -3,9 +3,9 @@ package ru.georgeee.bachelor.yarn.alignment;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.*;
 import org.apache.commons.lang3.StringUtils;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 import ru.georgeee.bachelor.yarn.graph.Query;
 import ru.georgeee.bachelor.yarn.graph.SynsetNode;
+import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,6 +82,11 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         ISynset synset = getSynset(id);
         if (synset == null) return null;
         return new SynsetNode<ISynset, V>(synset) {
+            @Override
+            public String getGloss() {
+                return synset.getGloss();
+            }
+
             @Override
             public String getId() {
                 return synset.getID().toString();

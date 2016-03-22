@@ -3,10 +3,10 @@ package ru.georgeee.bachelor.yarn.alignment;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 import ru.georgeee.bachelor.yarn.graph.Query;
 import ru.georgeee.bachelor.yarn.graph.SynsetNode;
 import ru.georgeee.bachelor.yarn.graph.TranslationLink;
+import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -36,7 +36,7 @@ public class Metrics {
                         .forEach(transSynsets::addAll);
                 transSynsets.forEach(s -> {
                     wTransSynsets.add(s);
-                    TranslationLink link = composeLink(word, s, translation);
+                    TranslationLink link = new TranslationLink(word, translation, jaccardIndex(s.getWords(), translation));
                     TranslationLink oldLink = links.get(s);
                     if (oldLink == null || oldLink.getWeight() < link.getWeight()) {
                         links.put(s, link);
@@ -64,16 +64,13 @@ public class Metrics {
         }
     }
 
-    private <T, V> TranslationLink composeLink(String word, SynsetNode<T, V> synset, List<String> translation) {
-        Set<String> synsetWords = synset.getWords();
+    public double jaccardIndex(Set<String> words1, Collection<String> words2) {
         int commonCount = 0;
-        for (String t : translation) {
-            if (synsetWords.contains(t)) {
+        for (String t : words2) {
+            if (words1.contains(t)) {
                 commonCount++;
             }
         }
-        double weight = ((double) commonCount) / (synsetWords.size() + translation.size());
-        return new TranslationLink(word, translation, weight);
+        return 2.0d * commonCount / (words1.size() + words2.size());
     }
-
 }

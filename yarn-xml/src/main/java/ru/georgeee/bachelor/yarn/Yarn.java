@@ -6,6 +6,14 @@ import org.slf4j.LoggerFactory;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 import ru.georgeee.bachelor.yarn.xml.WordEntry;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -114,4 +122,18 @@ public class Yarn {
         if (ref == null) return "null";
         return "{ " + ref.getId() + " : " + ref.getWord() + " (" + ref.getGrammar() + ") }";
     }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T unmarshal(Class<T> docClass, InputStream inputStream)
+            throws JAXBException {
+        String packageName = docClass.getPackage().getName();
+        JAXBContext jc = JAXBContext.newInstance(packageName);
+        Unmarshaller u = jc.createUnmarshaller();
+        return (T) u.unmarshal(inputStream);
+    }
+
+    public static Yarn create(Path yarnXmlPath) throws IOException, JAXBException {
+        return new Yarn(unmarshal(ru.georgeee.bachelor.yarn.xml.Yarn.class, Files.newInputStream(yarnXmlPath)));
+    }
+
 }

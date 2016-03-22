@@ -3,9 +3,9 @@ package ru.georgeee.bachelor.yarn.alignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.georgeee.bachelor.yarn.Yarn;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 import ru.georgeee.bachelor.yarn.graph.Query;
 import ru.georgeee.bachelor.yarn.graph.SynsetNode;
+import ru.georgeee.bachelor.yarn.graph.NodeRepository;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 import ru.georgeee.bachelor.yarn.xml.WordEntry;
 
@@ -49,6 +49,11 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
         SynsetEntry synset = yarn.getSynset(id);
         if (synset == null) return null;
         return new SynsetNode<SynsetEntry, V>(synset) {
+            @Override
+            public String getGloss() {
+                return null;
+            }
+
             @Override
             public String getId() {
                 return synset.getId();

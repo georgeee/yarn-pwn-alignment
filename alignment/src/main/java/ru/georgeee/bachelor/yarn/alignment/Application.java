@@ -4,6 +4,7 @@ package ru.georgeee.bachelor.yarn.alignment;
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.*;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +45,9 @@ public class Application implements CommandLineRunner {
     @Value("${gv.out:out.dot}")
     private String graphvizOutFile;
 
+    @Value("${dict.stats:false}")
+    private boolean dictCollectStats;
+
     @Autowired
     private DictFactory dictFactory;
 
@@ -53,8 +57,8 @@ public class Application implements CommandLineRunner {
     @Autowired
     private Metrics metrics;
 
-    private SimpleDict enRuDict;
-    private SimpleDict ruEnDict;
+    private Dict enRuDict;
+    private Dict ruEnDict;
 
     private Yarn yarn;
     private IDictionary pwnDict;
@@ -70,11 +74,19 @@ public class Application implements CommandLineRunner {
 
     @PostConstruct
     private void init() throws IOException, JAXBException {
-        enRuDict = dictFactory.getDict(enRuDictPath);
-        ruEnDict = dictFactory.getDict(ruEnDictPath);
+        enRuDict = initDict(enRuDictPath);
+        ruEnDict = initDict(ruEnDictPath);
         yarn = Yarn.create(Paths.get(yarnXmlPath));
         pwnDict = new Dictionary(new URL("file", null, pwnHomePath));
         pwnDict.open();
+    }
+
+    private Dict initDict(String settingsString) throws IOException {
+        Dict dict = dictFactory.getDict(settingsString);
+        if (dictCollectStats) {
+            return new StatTrackingDict(dict);
+        }
+        return dict;
     }
 
     @Override
@@ -85,21 +97,45 @@ public class Application implements CommandLineRunner {
                 query = query.trim();
                 if (query.isEmpty()) continue;
                 if (query.charAt(0) == ':') {
-                    int index = query.indexOf('=');
-                    if (index == -1) {
-                        System.err.println("Wrong format");
-                    } else {
-                        String key = query.substring(1, index).trim();
-                        String value = query.substring(index + 1).trim();
-                        processParameter(key, value);
+                    String[] parts = query.substring(1).split("\\s+", 2);
+                    String type = parts[0], q = parts.length == 2 ? parts[1] : "";
+                    switch (type) {
+                        case "s": {
+                            int index = q.indexOf('=');
+                            if (index == -1) {
+                                System.err.println("Wrong format");
+                            } else {
+                                String key = q.substring(0, index).trim();
+                                String value = q.substring(index + 1).trim();
+                                processParameter(key, value);
+                            }
+                            break;
+                        }
+                        case "t": {
+                            for (String s : q.split("\\s*,\\s*")) {
+                                System.out.println("EnRu: " + s + ":" + enRuDict.translate(s));
+                                System.out.println("RuEn: " + s + ":" + ruEnDict.translate(s));
+                            }
+                            break;
+                        }
+                        case "ds": {
+                            if (q.isEmpty()) {
+                                printDictStats(System.out);
+                            } else {
+                                try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(q))) {
+                                    printDictStats(bw);
+                                }
+                            }
+                            break;
+                        }
+                        default:
+                            System.err.println("Unknown query: " + query);
                     }
                 } else {
                     PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
                     YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
                     List<SynsetNode<?, ?>> origSynsets = new ArrayList<>();
                     for (String s : query.split("\\s*,\\s*")) {
-                        System.out.println("EnRu: " + s + ":" + enRuDict.translate(s));
-                        System.out.println("RuEn: " + s + ":" + ruEnDict.translate(s));
                         List<SynsetNode<SynsetEntry, ISynset>> yarnSynsets = findNode(yarnRepo, s);
                         List<SynsetNode<ISynset, SynsetEntry>> pwnSynsets = findNode(pwnRepo, s);
                         origSynsets.addAll(yarnSynsets);
@@ -112,6 +148,21 @@ public class Application implements CommandLineRunner {
                     printSynsets(origSynsets);
                 }
             }
+        }
+    }
+
+    private void printDictStats(Appendable out) throws IOException {
+        out.append("En-ru dict:\n");
+        if (enRuDict instanceof StatTrackingDict) {
+            ((StatTrackingDict) enRuDict).printStats(out);
+        } else {
+            out.append("  Stats turned off\n");
+        }
+        out.append("Ru-en dict:\n");
+        if (ruEnDict instanceof StatTrackingDict) {
+            ((StatTrackingDict) ruEnDict).printStats(out);
+        } else {
+            out.append("  Stats turned off\n");
         }
     }
 
@@ -146,6 +197,8 @@ public class Application implements CommandLineRunner {
                         case "out":
                             graphvizOutFile = value;
                             break;
+                        default:
+                            System.err.println("Unknown key: " + key);
                     }
                     break;
                 default:

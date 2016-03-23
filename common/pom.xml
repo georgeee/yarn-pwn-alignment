@@ -21,12 +21,24 @@
             <artifactId>commons-math3</artifactId>
         </dependency>
         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
             <groupId>edu.mit</groupId>
             <artifactId>jwi</artifactId>
         </dependency>
         <dependency>
             <groupId>ru.georgeee.bachelor.yarn</groupId>
             <artifactId>yarn-xml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
         </dependency>
     </dependencies>
 

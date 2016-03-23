@@ -64,7 +64,7 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
                 Set<String> words = new HashSet<>();
                 for (SynsetEntry.Word w : synset.getWord()) {
                     if (w == null || w.getRef() == null) {
-                        log.warn("Discrepancy in data: {}", Yarn.toString(synset));
+//                        log.warn("Discrepancy in data: {}", Yarn.toString(synset));
                     } else {
                         words.add(((WordEntry) w.getRef()).getWord());
                     }
@@ -79,7 +79,7 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
                         return YarnNodeRepository.getPOS((WordEntry) word.getRef());
                     }
                 }
-                log.warn("Discrepancy in data: synset without a word: " + this);
+//                log.warn("Discrepancy in data: synset without a word: " + this);
                 return POS.NOUN;
             }
 

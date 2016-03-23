@@ -24,12 +24,13 @@ public class Metrics {
         p1C = 1 / p1ND.density(params.getP1Mean());
     }
 
-    public <T, V> void processNode(SimpleDict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
+    public <T, V> void processNode(Dict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
         Map<SynsetNode<V, T>, TranslationLink> links = new HashMap<>();
         Map<SynsetNode<V, T>, Integer> linkCounts = new HashMap<>();
         for (String word : node.getWords()) {
             Set<SynsetNode<V, T>> wTransSynsets = new HashSet<>();
             List<List<String>> translations = dict.translate(word);
+            boolean matchAny = false;
             for (List<String> translation : translations) {
                 Set<SynsetNode<V, T>> transSynsets = new HashSet<>();
                 translation.stream().map(w -> repo.findNode(new Query(w, node.getPOS())))
@@ -42,6 +43,10 @@ public class Metrics {
                         links.put(s, link);
                     }
                 });
+                matchAny |= !transSynsets.isEmpty();
+            }
+            if (dict instanceof StatTrackingDict) {
+                ((StatTrackingDict) dict).reportResult(word, matchAny);
             }
             wTransSynsets.forEach(s -> linkCounts.put(s, 1 + linkCounts.getOrDefault(s, 0)));
         }

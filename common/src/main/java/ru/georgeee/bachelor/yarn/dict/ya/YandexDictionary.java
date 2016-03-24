@@ -55,7 +55,8 @@ public class YandexDictionary {
     }
 
     public LookupResponse translate(String word, String dir) throws IOException {
-        HttpGet request = new HttpGet(String.format(TRANSLATE_URI, urlEncode(apiKey), dir, flags, urlEncode(word)));
+        String uri = String.format(TRANSLATE_URI, urlEncode(apiKey), dir, flags, urlEncode(word));
+        HttpGet request = new HttpGet(uri);
         HttpResponse response = httpClient.execute(request);
         Reader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
         return gson.fromJson(reader, LookupResponse.class);

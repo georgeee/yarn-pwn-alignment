@@ -21,6 +21,10 @@ public class GraphVizBuilder implements AutoCloseable {
         out.append("graph synsets{\n layout = " + settings.getEngine() + ";\n");
     }
 
+    public void addIgnored(Collection<? extends SynsetNode<?, ?>> nodes){
+        used.addAll(nodes);
+    }
+
     public <T, V> void addRepo(NodeRepository<T, V> repo) throws IOException {
         for (SynsetNode<T, V> from : repo.getNodes()) {
             addNode(from);

@@ -4,7 +4,6 @@ package ru.georgeee.bachelor.yarn.alignment;
 import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.*;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,6 +61,9 @@ public class Application implements CommandLineRunner {
 
     private Yarn yarn;
     private IDictionary pwnDict;
+
+    @Value("${graph.depth:2}")
+    private int graphDepth;
 
     @Autowired
     private GraphVizSettings gvSettings;
@@ -134,18 +136,23 @@ public class Application implements CommandLineRunner {
                 } else {
                     PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
                     YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
-                    List<SynsetNode<?, ?>> origSynsets = new ArrayList<>();
+                    GraphTraverser traverser = new GraphTraverser();
+                    traverser.registerRepo(pwnRepo, n -> metrics.processNode(enRuDict, yarnRepo, n));
+                    traverser.registerRepo(yarnRepo, n -> metrics.processNode(ruEnDict, pwnRepo, n));
                     for (String s : query.split("\\s*,\\s*")) {
-                        List<SynsetNode<SynsetEntry, ISynset>> yarnSynsets = findNode(yarnRepo, s);
-                        List<SynsetNode<ISynset, SynsetEntry>> pwnSynsets = findNode(pwnRepo, s);
-                        origSynsets.addAll(yarnSynsets);
-                        origSynsets.addAll(pwnSynsets);
-                        yarnSynsets.stream().forEach(node -> metrics.processNode(ruEnDict, pwnRepo, node));
-                        pwnSynsets.stream().forEach(node -> metrics.processNode(enRuDict, yarnRepo, node));
+                        findNode(yarnRepo, s);
+                        findNode(pwnRepo, s);
                     }
-                    pwnRepo.getNodes().stream().forEach(node -> metrics.processNode(enRuDict, yarnRepo, node));
-                    yarnRepo.getNodes().stream().forEach(node -> metrics.processNode(ruEnDict, pwnRepo, node));
-                    printSynsets(origSynsets);
+                    traverser.traverse(graphDepth);
+                    try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile));
+                         GraphVizBuilder builder = new GraphVizBuilder(gvSettings, bw)) {
+                        builder.addIgnored(traverser.getRemained());
+                        builder.addRepo(pwnRepo);
+                        builder.addRepo(yarnRepo);
+                        List<SynsetNode<?, ?>> created = new ArrayList<>(builder.getCreated());
+                        Collections.sort(created, (s1, s2) -> s1.getId().compareTo(s2.getId()));
+                        created.stream().forEach(System.out::println);
+                    }
                 }
             }
         }
@@ -180,6 +187,15 @@ public class Application implements CommandLineRunner {
             String prefix = key.substring(0, index);
             String rest = key.substring(index + 1);
             switch (prefix) {
+                case "gr":
+                    switch (rest) {
+                        case "depth":
+                            graphDepth = Integer.parseInt(value);
+                            break;
+                        default:
+                            System.err.println("Unknown key: " + key);
+                    }
+                    break;
                 case "mp":
                     BeanUtils.getPropertyDescriptor(MetricsParams.class, rest).getWriteMethod().invoke(params, Double.parseDouble(value));
                     break;
@@ -206,18 +222,6 @@ public class Application implements CommandLineRunner {
             }
         } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
             System.err.println("Error: " + e.getClass() + " " + e.getMessage());
-        }
-    }
-
-    private void printSynsets(List<SynsetNode<?, ?>> origSynsets) throws IOException {
-        try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile));
-             GraphVizBuilder builder = new GraphVizBuilder(gvSettings, bw)) {
-            for (SynsetNode<?, ?> n : origSynsets) {
-                builder.addNode(n);
-            }
-            List<SynsetNode<?, ?>> created = new ArrayList<>(builder.getCreated());
-            Collections.sort(created, (s1, s2) -> s1.getId().compareTo(s2.getId()));
-            created.stream().forEach(System.out::println);
         }
     }
 

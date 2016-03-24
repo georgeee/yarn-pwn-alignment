@@ -67,7 +67,7 @@ public class DictFactory {
                                                 return res;
                                             }))
                                     .collect(Collectors.toList());
-                        } catch (IllegalArgumentException | IOException e) {
+                        } catch (Exception e) {
                             log.warn("Error communicating to slovari.yandex", e);
                             return Collections.emptyList();
                         }

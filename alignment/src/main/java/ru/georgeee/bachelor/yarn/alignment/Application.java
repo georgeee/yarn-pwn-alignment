@@ -62,8 +62,8 @@ public class Application implements CommandLineRunner {
     private Yarn yarn;
     private IDictionary pwnDict;
 
-    @Value("${graph.depth:2}")
-    private int graphDepth;
+    @Autowired
+    private GraphSettings grSettings;
 
     @Autowired
     private GraphVizSettings gvSettings;
@@ -137,13 +137,19 @@ public class Application implements CommandLineRunner {
                     PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
                     YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
                     GraphTraverser traverser = new GraphTraverser();
-                    traverser.registerRepo(pwnRepo, n -> metrics.processNode(enRuDict, yarnRepo, n));
-                    traverser.registerRepo(yarnRepo, n -> metrics.processNode(ruEnDict, pwnRepo, n));
+                    traverser.registerRepo(pwnRepo, (n, s) -> {
+                        metrics.processNode(s, enRuDict, yarnRepo, n);
+                        return null;
+                    });
+                    traverser.registerRepo(yarnRepo, (n, s) -> {
+                        metrics.processNode(s, ruEnDict, pwnRepo, n);
+                        return null;
+                    });
                     for (String s : query.split("\\s*,\\s*")) {
                         findNode(yarnRepo, s);
                         findNode(pwnRepo, s);
                     }
-                    traverser.traverse(graphDepth);
+                    traverser.traverse(grSettings);
                     try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile));
                          GraphVizBuilder builder = new GraphVizBuilder(gvSettings, bw)) {
                         builder.addIgnored(traverser.getRemained());
@@ -189,8 +195,14 @@ public class Application implements CommandLineRunner {
             switch (prefix) {
                 case "gr":
                     switch (rest) {
+                        case "maxEdges":
+                            grSettings.setMaxEdges(Integer.parseInt(value));
+                            break;
+                        case "threshold":
+                            grSettings.setThreshold(Double.parseDouble(value));
+                            break;
                         case "depth":
-                            graphDepth = Integer.parseInt(value);
+                            grSettings.setDepth(Integer.parseInt(value));
                             break;
                         default:
                             System.err.println("Unknown key: " + key);

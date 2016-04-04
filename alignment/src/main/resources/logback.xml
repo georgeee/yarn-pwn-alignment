@@ -6,13 +6,14 @@
 <!--    http://www.qos.ch/shop/products/professionalSupport         -->
 <!--                                                                -->
 <configuration>
+    <logger name="ru.georgeee.bachelor.yarn.dict.ya" level="debug"/>
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <Target>System.out</Target>
         <encoder>
             <pattern>%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n</pattern>
         </encoder>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>info</level>
+            <level>debug</level>
         </filter>
     </appender>
     <appender name="debugFile" class="ch.qos.logback.core.FileAppender">
@@ -37,7 +38,7 @@
             <level>info</level>
         </filter>
     </appender>
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="stdout"/>
         <appender-ref ref="debugFile"/>
         <appender-ref ref="infoFile"/>

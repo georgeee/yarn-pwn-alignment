@@ -2,24 +2,22 @@ package ru.georgeee.bachelor.yarn.dict.ya;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.client.utils.HttpClientUtils;
-import org.apache.http.config.ConnectionConfig;
 import org.apache.http.config.SocketConfig;
-import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URLEncoder;
 import java.util.List;
 
 public class YandexDictionary {
-    private static final int SO_TIMEOUT = 500;
+    private static final Logger log = LoggerFactory.getLogger(YandexDictionary.class);
+    private static final int SO_TIMEOUT = 5000;
 
     public static final int FLAG_FAMILY = 0x0001;//family filter
     public static final int FLAG_SHORT_POS = 0x0002; //search short speech parts
@@ -55,11 +53,13 @@ public class YandexDictionary {
     }
 
     public LookupResponse translate(String word, String dir) throws IOException {
+        log.debug("YaDict: {} ({})", word, dir);
         String uri = String.format(TRANSLATE_URI, urlEncode(apiKey), dir, flags, urlEncode(word));
         HttpGet request = new HttpGet(uri);
         HttpResponse response = httpClient.execute(request);
-        Reader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()));
-        return gson.fromJson(reader, LookupResponse.class);
+        try (Reader reader = new BufferedReader(new InputStreamReader(response.getEntity().getContent()))) {
+            return gson.fromJson(reader, LookupResponse.class);
+        }
     }
 
     @SuppressWarnings("unchecked")

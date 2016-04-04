@@ -3,13 +3,11 @@ package ru.georgeee.bachelor.yarn.alignment;
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.georgeee.bachelor.yarn.graph.Query;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
-import ru.georgeee.bachelor.yarn.graph.TranslationLink;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
+import ru.georgeee.bachelor.yarn.graph.*;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.stream.Stream;
 
 @Component
 public class Metrics {
@@ -24,7 +22,7 @@ public class Metrics {
         p1C = 1 / p1ND.density(params.getP1Mean());
     }
 
-    public <T, V> void processNode(Dict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
+    public <T, V> void processNode(GraphSettings grSettings, Dict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
         Map<SynsetNode<V, T>, TranslationLink> links = new HashMap<>();
         Map<SynsetNode<V, T>, Integer> linkCounts = new HashMap<>();
         for (String word : node.getWords()) {
@@ -57,7 +55,17 @@ public class Metrics {
                 link.setWeight(newWeight);
             }
         });
-        node.getEdges().putAll(links);
+        Stream<Map.Entry<SynsetNode<V, T>, TranslationLink>> stream = links.entrySet().stream()
+                .filter(e -> e.getValue().getWeight() >= grSettings.getThreshold());
+        if (grSettings.getMaxEdges() > 0) {
+            stream = stream
+                    .sorted((a, b) -> -Double.compare(a.getValue().getWeight(), b.getValue().getWeight()))
+                    .limit(grSettings.getMaxEdges());
+        }
+        stream.forEach(e -> {
+            e.getKey().reportBackEdge(e.getValue());
+            node.getEdges().put(e.getKey(), e.getValue());
+        });
     }
 
     private double p1Measure(int wordsLinked, int wordsTotal) {

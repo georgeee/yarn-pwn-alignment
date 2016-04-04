@@ -7,6 +7,8 @@ import java.util.*;
 @Getter
 public abstract class SynsetNode<T, V> {
     private final Map<SynsetNode<V, T>, TranslationLink> edges = new HashMap<>();
+    @Getter
+    private double maxBackEdgeWeight;
     private final T data;
 
     @Override
@@ -15,6 +17,12 @@ public abstract class SynsetNode<T, V> {
         if (o == null || getClass() != o.getClass()) return false;
         SynsetNode<?, ?> that = (SynsetNode<?, ?>) o;
         return Objects.equals(getId(), that.getId());
+    }
+
+    public void reportBackEdge(TranslationLink link) {
+        if (maxBackEdgeWeight < link.getWeight()) {
+            maxBackEdgeWeight = link.getWeight();
+        }
     }
 
     @Override

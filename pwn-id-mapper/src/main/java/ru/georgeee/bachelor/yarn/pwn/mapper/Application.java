@@ -29,6 +29,7 @@ import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
@@ -100,10 +101,10 @@ public class Application implements CommandLineRunner {
                 }
                 result.put(left, right);
             });
-        } catch (FileNotFoundException e) {
+        } catch (NoSuchFileException e) {
             log.info("No file {} exist", resultFile);
         }
-        resultWriter = Files.newBufferedWriter(Paths.get(resultFile), StandardOpenOption.APPEND);
+        resultWriter = Files.newBufferedWriter(Paths.get(resultFile), StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         scanner = new Scanner(System.in);
     }
 
@@ -117,7 +118,7 @@ public class Application implements CommandLineRunner {
         if (oldId != null) {
             log.warn("Duplicate for origId {} ({}, {})", oldId, id);
         }
-        resultWriter.append(oldId).append(": ").append(id);
+        resultWriter.append(origId).append(": ").append(id);
         resultWriter.newLine();
         resultWriter.flush();
         log.info("Added result origId={} id={}", origId, id);
@@ -149,12 +150,12 @@ public class Application implements CommandLineRunner {
         int counter = 0;
         int count = verboseResult.size();
         for (Map.Entry<String, SrcEntry> e : verboseResult.entrySet()) {
-            System.out.printf("[%d / %d] %s: gloss=%s words=%s%n", ++counter, count, e.getKey(), e.getValue().getGloss(), e.getValue().getWords());
+            System.out.printf("[%d / %d] %s: gloss=%s%n\t\twords=%s%n", ++counter, count, e.getKey(), e.getValue().getGloss(), e.getValue().getWords());
             List<DestEntry> options = e.getValue().getEntries();
             System.out.printf("\t% 2d: <omit entry>%n", 0);
             for (int i = 0; i < options.size(); ++i) {
                 DestEntry option = options.get(i);
-                System.out.printf("\t% 2d: %s jc=%0.3f lv=%0.3f gloss=%s words=%s%n", i + 1, option.getId(), option.getJaccardIndex(), option.getLvDistNormalized(), option.getGloss(), option.getWords());
+                System.out.printf("\t% 2d: %s jc=%.3f lv=%.3f gloss=%s%n\t\twords=%s%n", i + 1, option.getId(), option.getJaccardIndex(), option.getLvDistNormalized(), option.getGloss(), option.getWords());
             }
             int optI = Integer.MIN_VALUE;
             while (optI < 0 || optI > options.size()) {
@@ -196,12 +197,12 @@ public class Application implements CommandLineRunner {
                     if (!used.add(destNode.getId())) continue;
                     double lvDistNormalized = lvDistNormalized(srcNode.getGloss(), destNode.getGloss());
                     double jaccard = metrics.jaccardIndex(srcNode.getWords(), destNode.getWords());
-                    if (lvDistNormalized <= lvDistThreshold && jaccard >= jaccardThreshold) {
+                    if ((lvDistNormalized <= lvDistThreshold && jaccard >= jaccardThreshold) || lvDistNormalized <= 1e-3) {
                         if (!matchedByGlossInited) {
                             matchedByGlossId = destNode.getId();
                             matchedByGlossInited = true;
                         } else {
-                            log.warn("Two with equal glosses: {} {} (original {})", matchedByGlossId, destNode.getId(), srcNode.getId());
+                            log.info("Two with equal glosses: {} {} (original {})", matchedByGlossId, destNode.getId(), srcNode.getId());
                             matchedByGlossId = null;
                         }
                     }

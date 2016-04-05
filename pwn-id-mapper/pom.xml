@@ -54,6 +54,18 @@
                                 </configuration>
                             </execution>
                             <execution>
+                                <id>download-pwn-30</id>
+                                <phase>generate-resources</phase>
+                                <goals>
+                                    <goal>wget</goal>
+                                </goals>
+                                <configuration>
+                                    <unpack>true</unpack>
+                                    <url>http://wordnetcode.princeton.edu/3.0/WordNet-3.0.tar.gz</url>
+                                    <outputDirectory>../pwn3.0</outputDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
                                 <id>download-pwn-20</id>
                                 <phase>generate-resources</phase>
                                 <goals>

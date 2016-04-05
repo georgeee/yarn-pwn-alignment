@@ -191,13 +191,17 @@ public class Application implements CommandLineRunner {
             Set<String> used = new HashSet<>();
             PriorityQueue<Pair<Double, String>> heap = new PriorityQueue<>();
             boolean matchedByGlossInited = false;
+            boolean matchedByGlossZeroLv = false;
             String matchedByGlossId = null;
             for (String word : srcNode.getWords()) {
                 for (SynsetNode<ISynset, ?> destNode : destNodeRepository.findNode(new Query(word, srcNode.getPOS()))) {
                     if (!used.add(destNode.getId())) continue;
                     double lvDistNormalized = lvDistNormalized(srcNode.getGloss(), destNode.getGloss());
                     double jaccard = metrics.jaccardIndex(srcNode.getWords(), destNode.getWords());
-                    if ((lvDistNormalized <= lvDistThreshold && jaccard >= jaccardThreshold) || lvDistNormalized <= 1e-3) {
+                    if (lvDistNormalized <= 1e-5) {
+                        matchedByGlossZeroLv = true;
+                        matchedByGlossId = destNode.getId();
+                    } else if (!matchedByGlossZeroLv && (lvDistNormalized <= lvDistThreshold && jaccard >= jaccardThreshold)) {
                         if (!matchedByGlossInited) {
                             matchedByGlossId = destNode.getId();
                             matchedByGlossInited = true;

@@ -15,13 +15,15 @@ public class GraphVizBuilder implements AutoCloseable {
     @Getter
     private final Set<SynsetNode<?, ?>> created = new HashSet<>();
 
+    private final Map<SynsetNode<?, ?>, Map<SynsetNode<?, ?>, TranslationLink>> edges = new HashMap<>();
+
     public GraphVizBuilder(GraphVizSettings settings, Appendable out) throws IOException {
         this.settings = settings;
         this.out = out;
-        out.append("graph synsets{\n layout = " + settings.getEngine() + ";\n");
+        out.append("graph synsets{\n layout = ").append(settings.getEngine()).append(";\n");
     }
 
-    public void addIgnored(Collection<? extends SynsetNode<?, ?>> nodes){
+    public void addIgnored(Collection<? extends SynsetNode<?, ?>> nodes) {
         used.addAll(nodes);
     }
 
@@ -31,10 +33,33 @@ public class GraphVizBuilder implements AutoCloseable {
         }
     }
 
+    private Map<? extends SynsetNode<?, ?>, TranslationLink> getEdges(SynsetNode<?, ?> from) {
+        if (settings.getMaxEdges() > 0) {
+            return edges.computeIfAbsent(from, k -> {
+                List<Map.Entry<? extends SynsetNode<?, ?>, TranslationLink>> entries = new ArrayList<>();
+                from.getEdges().entrySet().stream()
+                        .filter(e -> !used.contains(e.getKey()))
+                        .forEach(entries::add);
+                entries.sort((a, b) -> {
+                    TranslationLink arLink = a.getKey().getEdges().get(from);
+                    TranslationLink brLink = b.getKey().getEdges().get(from);
+                    double aWeight = a.getValue().getWeight() + (arLink == null ? 0 : arLink.getWeight());
+                    double bWeight = b.getValue().getWeight() + (brLink == null ? 0 : brLink.getWeight());
+                    return -Double.compare(aWeight, bWeight);
+                });
+                Map<SynsetNode<?, ?>, TranslationLink> map = new HashMap<>();
+                entries.stream().limit(settings.getMaxEdges()).forEach(e -> map.put(e.getKey(), e.getValue()));
+                return map;
+            });
+        } else {
+            return from.getEdges();
+        }
+    }
+
     public <T, V> void addNode(SynsetNode<T, V> from) throws IOException {
         if (used.add(from)) {
-            for (Map.Entry<SynsetNode<V, T>, TranslationLink> e : from.getEdges().entrySet()) {
-                SynsetNode<V, T> to = e.getKey();
+            for (Map.Entry<? extends SynsetNode<?, ?>, TranslationLink> e : getEdges(from).entrySet()) {
+                SynsetNode<?, ?> to = e.getKey();
                 if (!used.contains(to)) {
                     TranslationLink link2 = to.getEdges().get(from);
                     if (from.getId().compareTo(to.getId()) < 0) {
@@ -48,7 +73,10 @@ public class GraphVizBuilder implements AutoCloseable {
     }
 
 
-    private <T, V> void addEdge(SynsetNode<T, V> from, SynsetNode<V, T> to, TranslationLink link1, TranslationLink link2) throws IOException {
+    private void addEdge(SynsetNode<?, ?> from, SynsetNode<?, ?> to, TranslationLink link1, TranslationLink link2) throws IOException {
+//        if (settings.getMaxEdges() > 0 && !getEdges(from).containsKey(to) && !getEdges(to).containsKey(from)) {
+//            return;
+//        }
         double weight1 = link1 == null ? 0.0 : link1.getWeight();
         double weight2 = link2 == null ? 0.0 : link2.getWeight();
         double weight = (weight1 + weight2) / 2;

@@ -17,4 +17,7 @@ public class GraphVizSettings {
 
     @Value("${gv.mThreshold:0.01}")
     private double meanThreshold;
+
+    @Value("${gv.maxEdges:0}")
+    private int maxEdges;
 }

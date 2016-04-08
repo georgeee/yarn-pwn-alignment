@@ -213,6 +213,9 @@ public class Application implements CommandLineRunner {
                     break;
                 case "gv":
                     switch (rest) {
+                        case "maxEdges":
+                            gvSettings.setMaxEdges(Integer.parseInt(value));
+                            break;
                         case "engine":
                             gvSettings.setEngine(value);
                             break;

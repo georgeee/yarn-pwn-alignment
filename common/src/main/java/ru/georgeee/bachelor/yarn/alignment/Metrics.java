@@ -63,7 +63,7 @@ public class Metrics {
                     .limit(grSettings.getMaxEdges());
         }
         stream.forEach(e -> {
-            e.getKey().reportBackEdge(e.getValue());
+            e.getKey().reportBackEdgeWeight(e.getValue().getWeight());
             node.getEdges().put(e.getKey(), e.getValue());
         });
     }

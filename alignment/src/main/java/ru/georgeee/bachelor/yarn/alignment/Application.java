@@ -12,6 +12,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import ru.georgeee.bachelor.yarn.Yarn;
+import ru.georgeee.bachelor.yarn.clustering.Clusterer;
 import ru.georgeee.bachelor.yarn.graph.*;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 
@@ -68,6 +69,9 @@ public class Application implements CommandLineRunner {
     @Autowired
     private GraphVizSettings gvSettings;
 
+    @Autowired
+    private Clusterer clusterer;
+
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
         application.setApplicationContextClass(AnnotationConfigApplicationContext.class);
@@ -100,8 +104,20 @@ public class Application implements CommandLineRunner {
                 if (query.isEmpty()) continue;
                 if (query.charAt(0) == ':') {
                     String[] parts = query.substring(1).split("\\s+", 2);
-                    String type = parts[0], q = parts.length == 2 ? parts[1] : "";
+                    String type = parts[0], q = parts.length == 2 ? parts[1].trim() : "";
                     switch (type) {
+                        case "w": {
+                            PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
+                            YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
+                            for (String s : q.split("\\s*,\\s*")) {
+                                System.out.println(s);
+                                SynsetNode<SynsetEntry, ISynset> yarnNode = yarnRepo.getNodeById(s);
+                                SynsetNode<ISynset, SynsetEntry> pwnNode = pwnRepo.getNodeById(s);
+                                System.out.println("\tYarn: " + yarnNode);
+                                System.out.println("\tPWN: " + pwnNode);
+                            }
+                            break;
+                        }
                         case "s": {
                             int index = q.indexOf('=');
                             if (index == -1) {
@@ -150,6 +166,7 @@ public class Application implements CommandLineRunner {
                         findNode(pwnRepo, s);
                     }
                     traverser.traverse(grSettings);
+                    clusterer.clusterizeOutgoingEdges(pwnRepo);
                     try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile));
                          GraphVizBuilder builder = new GraphVizBuilder(gvSettings, bw)) {
                         builder.addIgnored(traverser.getRemained());

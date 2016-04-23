@@ -81,7 +81,7 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
     protected SynsetNode<ISynset, V> createNode(String id) {
         ISynset synset = getSynset(id);
         if (synset == null) return null;
-        return new SynsetNode<ISynset, V>(synset) {
+        return new SynsetNode<ISynset, V>() {
             @Override
             public String getGloss() {
                 return synset.getGloss();

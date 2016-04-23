@@ -48,7 +48,7 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
     protected SynsetNode<SynsetEntry, V> createNode(String id) {
         SynsetEntry synset = yarn.getSynset(id);
         if (synset == null) return null;
-        return new SynsetNode<SynsetEntry, V>(synset) {
+        return new SynsetNode<SynsetEntry, V>() {
             @Override
             public String getGloss() {
                 return null;

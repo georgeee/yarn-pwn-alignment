@@ -4,12 +4,11 @@ import lombok.Getter;
 
 import java.util.*;
 
-@Getter
 public abstract class SynsetNode<T, V> {
+    @Getter
     private final Map<SynsetNode<V, T>, TranslationLink> edges = new HashMap<>();
     @Getter
     private double maxBackEdgeWeight;
-    private final T data;
 
     @Override
     public boolean equals(Object o) {
@@ -19,19 +18,15 @@ public abstract class SynsetNode<T, V> {
         return Objects.equals(getId(), that.getId());
     }
 
-    public void reportBackEdge(TranslationLink link) {
-        if (maxBackEdgeWeight < link.getWeight()) {
-            maxBackEdgeWeight = link.getWeight();
+    public void reportBackEdgeWeight(double weight) {
+        if (maxBackEdgeWeight < weight) {
+            maxBackEdgeWeight = weight;
         }
     }
 
     @Override
     public int hashCode() {
         return getId().hashCode();
-    }
-
-    protected SynsetNode(T data) {
-        this.data = data;
     }
 
     public abstract String getGloss();

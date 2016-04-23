@@ -3,6 +3,7 @@ package ru.georgeee.bachelor.yarn.graph;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.georgeee.bachelor.yarn.clustering.Cluster;
 
 import java.io.IOException;
 import java.util.*;
@@ -74,9 +75,6 @@ public class GraphVizBuilder implements AutoCloseable {
 
 
     private void addEdge(SynsetNode<?, ?> from, SynsetNode<?, ?> to, TranslationLink link1, TranslationLink link2) throws IOException {
-//        if (settings.getMaxEdges() > 0 && !getEdges(from).containsKey(to) && !getEdges(to).containsKey(from)) {
-//            return;
-//        }
         double weight1 = link1 == null ? 0.0 : link1.getWeight();
         double weight2 = link2 == null ? 0.0 : link2.getWeight();
         double weight = (weight1 + weight2) / 2;
@@ -101,15 +99,36 @@ public class GraphVizBuilder implements AutoCloseable {
         return id.replace('-', '_');
     }
 
+    private void writeNodeDef(String id, String label, Set<String> words) throws IOException {
+        out
+                .append(gvEscapeId(id))
+                .append(" [fontsize=7, label=\"")
+                .append(label)
+                .append('\n');
+        printSeparated(out, words, '\n', 5);
+        out.append("\"];\n");
+    }
+
     private <T, V> void writeNodeDef(SynsetNode<T, V> node) throws IOException {
         if (!created.add(node)) return;
-        out
-                .append(gvEscapeId(node.getId()))
-                .append(" [fontsize=7, label=\"")
-                .append(node.getId())
-                .append('\n');
-        printSeparated(out, node.getWords(), '\n', 5);
-        out.append("\"];\n");
+        if (node instanceof Cluster) {
+            out
+                    .append("subgraph cluster__")
+                    .append(gvEscapeId(node.getId()))
+                    .append("{\n color=blue; fontsize=7; label=\"")
+                    .append(node.getId())
+                    .append("\";\n");
+            boolean first = true;
+            for (Cluster.Member<T, V> member : ((Cluster<T, V>) node)) {
+                SynsetNode<T, V> mNode = member.getNode();
+                String mLabel = String.format("%s { %f : %f ; %f }", mNode.getId(), member.getMWeight(), member.getWeight(), member.getRWeight());
+                writeNodeDef(first ? node.getId() : node.getId() + "--" + mNode.getId(), mLabel, mNode.getWords());
+                first = false;
+            }
+            out.append("}");
+        } else {
+            writeNodeDef(node.getId(), node.getId(), node.getWords());
+        }
     }
 
     private void printSeparated(Appendable out, Collection<String> words, char sepBy, int sepAt) throws IOException {

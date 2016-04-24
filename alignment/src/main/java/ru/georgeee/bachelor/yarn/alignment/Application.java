@@ -10,7 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
 import ru.georgeee.bachelor.yarn.Yarn;
 import ru.georgeee.bachelor.yarn.clustering.Clusterer;
 import ru.georgeee.bachelor.yarn.graph.*;
@@ -71,6 +73,9 @@ public class Application implements CommandLineRunner {
 
     @Autowired
     private Clusterer clusterer;
+
+    @Autowired
+    private ApplicationContext context;
 
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
@@ -143,6 +148,24 @@ public class Application implements CommandLineRunner {
                                 try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(q))) {
                                     printDictStats(bw);
                                 }
+                            }
+                            break;
+                        }
+                        case "tse": {
+                            try {
+                                JdbcTemplate t = (JdbcTemplate) context.getBean("enwikt.jdbc");
+                                System.out.println(t.queryForList(q));
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                            break;
+                        }
+                        case "tsr": {
+                            try {
+                                JdbcTemplate t = (JdbcTemplate) context.getBean("ruwikt.jdbc");
+                                System.out.println(t.queryForList(q));
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
                             break;
                         }

@@ -1,0 +1,46 @@
+pwn:
+    home: pwn/dict
+yarn:
+    xml: yarn/yarn.xml
+dict:
+    en_ru: stardict:dicts/stardict/enru-lingvo.idx:dicts/stardict/enru-lingvo.dict;ya:en-ru
+    ru_en: stardict:dicts/stardict/ruen-lingvo.idx:dicts/stardict/ruen-lingvo.dict;ya:ru-en
+    ya:
+        apiKey: dict.1.1.20160323T065926Z.e566e6436dd96c39.330838c11d36aa78b54c1721cd796e0c14979083
+    ruwikt:
+        testOnBorrow: true
+        validationQuery: SELECT 1
+        driverClassName: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost/ruwikt?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Moscow&useSSL=false
+        username: root
+        password: krispo
+    enwikt:
+        testOnBorrow: true
+        validationQuery: SELECT 1
+        driverClassName: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://localhost/enwikt?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=Europe/Moscow&useSSL=false
+        username: root
+        password: krispo
+gv:
+    out: out.dot
+gr:
+    threshold: 0.2
+
+
+
+spring:
+    datasource:
+        initialize: false
+
+    jpa:
+        show-sql: true
+        hibernate:
+          ddl-auto: none
+          naming_strategy: org.hibernate.cfg.DefaultNamingStrategy
+        properties:
+          hibernate:
+            dialect: org.hibernate.dialect.MySQL5Dialect
+            hbm2ddl:
+              auto: none
+            temp:
+              use_jdbc_metadata_defaults: false

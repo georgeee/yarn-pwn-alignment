@@ -1,9 +1,11 @@
-package ru.georgeee.bachelor.yarn.alignment;
+package ru.georgeee.bachelor.yarn.app;
 
 import org.apache.commons.math3.distribution.NormalDistribution;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.georgeee.bachelor.yarn.graph.*;
+import ru.georgeee.bachelor.yarn.dict.StatTrackingDict;
+import ru.georgeee.bachelor.yarn.dict.Dict;
+import ru.georgeee.bachelor.yarn.core.*;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -23,19 +25,22 @@ public class Metrics {
     }
 
     public <T, V> void processNode(GraphSettings grSettings, Dict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
+        //@TODO utilize translation's gloss
         Map<SynsetNode<V, T>, TranslationLink> links = new HashMap<>();
         Map<SynsetNode<V, T>, Integer> linkCounts = new HashMap<>();
         for (String word : node.getWords()) {
             Set<SynsetNode<V, T>> wTransSynsets = new HashSet<>();
-            List<List<String>> translations = dict.translate(word);
+            List<Dict.Translation> translations = dict.translate(word);
             boolean matchAny = false;
-            for (List<String> translation : translations) {
+            for (Dict.Translation translation : translations) {
                 Set<SynsetNode<V, T>> transSynsets = new HashSet<>();
-                translation.stream().map(w -> repo.findNode(new Query(w, node.getPOS())))
+                translation
+                        .getWords()
+                        .stream().map(w -> repo.findNode(new Query(w, node.getPOS())))
                         .forEach(transSynsets::addAll);
                 transSynsets.forEach(s -> {
                     wTransSynsets.add(s);
-                    TranslationLink link = new TranslationLink(word, translation, jaccardIndex(s.getWords(), translation));
+                    TranslationLink link = new TranslationLink(word, translation, jaccardIndex(s.getWords(), translation.getWords()));
                     TranslationLink oldLink = links.get(s);
                     if (oldLink == null || oldLink.getWeight() < link.getWeight()) {
                         links.put(s, link);

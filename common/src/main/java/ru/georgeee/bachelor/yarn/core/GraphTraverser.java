@@ -1,10 +1,10 @@
-package ru.georgeee.bachelor.yarn.alignment;
+package ru.georgeee.bachelor.yarn.core;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
-import ru.georgeee.bachelor.yarn.graph.GraphSettings;
+import ru.georgeee.bachelor.yarn.core.NodeRepository;
+import ru.georgeee.bachelor.yarn.core.SynsetNode;
+import ru.georgeee.bachelor.yarn.core.GraphSettings;
 
 import java.util.ArrayList;
 import java.util.List;

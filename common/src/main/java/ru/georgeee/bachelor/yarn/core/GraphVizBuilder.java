@@ -1,4 +1,4 @@
-package ru.georgeee.bachelor.yarn.graph;
+package ru.georgeee.bachelor.yarn.core;
 
 import lombok.Getter;
 import org.slf4j.Logger;
@@ -91,8 +91,8 @@ public class GraphVizBuilder implements AutoCloseable {
                 .append(", label=\"")
                 .append(String.format("%.2f {%.2f, %.2f}", weight, weight1, weight2))
                 .append("\"];\n");
-        log.info("{} -> {}: {} (word {})", from.getId(), to.getId(), link1 == null ? null : link1.getTranslationMeaning(), link1 == null ? null : link1.getWord());
-        log.info("{} -> {}: {} (word {})", to.getId(), from.getId(), link2 == null ? null : link2.getTranslationMeaning(), link2 == null ? null : link2.getWord());
+        log.info("{} -> {}: {} (word {})", from.getId(), to.getId(), link1 == null ? null : link1.getTranslation(), link1 == null ? null : link1.getWord());
+        log.info("{} -> {}: {} (word {})", to.getId(), from.getId(), link2 == null ? null : link2.getTranslation(), link2 == null ? null : link2.getWord());
     }
 
     private String gvEscapeId(String id) {

@@ -1,11 +1,10 @@
-package ru.georgeee.bachelor.yarn.alignment;
+package ru.georgeee.bachelor.yarn.app;
 
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.*;
+import edu.mit.jwi.item.POS;
 import org.apache.commons.lang3.StringUtils;
-import ru.georgeee.bachelor.yarn.graph.Query;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
+import ru.georgeee.bachelor.yarn.core.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +26,7 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         }
         if (query.getPos() == null) {
             List<SynsetNode<ISynset, V>> result = new ArrayList<>();
-            for (SynsetNode.POS pos : SynsetNode.POS.values()) {
+            for (ru.georgeee.bachelor.yarn.core.POS pos : ru.georgeee.bachelor.yarn.core.POS.values()) {
                 result.addAll(findNodeImpl(query.getWord(), pos));
             }
             return result;
@@ -36,7 +35,7 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         }
     }
 
-    private List<SynsetNode<ISynset, V>> findNodeImpl(String word, SynsetNode.POS pos) {
+    private List<SynsetNode<ISynset, V>> findNodeImpl(String word, ru.georgeee.bachelor.yarn.core.POS pos) {
         IIndexWord idxWord = pwnDict.getIndexWord(word, convertPOS(pos));
         if (idxWord == null) {
             return Collections.emptyList();
@@ -53,7 +52,7 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         }
     }
 
-    private POS convertPOS(SynsetNode.POS pos) {
+    private POS convertPOS(ru.georgeee.bachelor.yarn.core.POS pos) {
         if (pos != null) {
             switch (pos) {
                 case NOUN:
@@ -99,18 +98,18 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
             }
 
             @Override
-            public POS getPOS() {
+            public ru.georgeee.bachelor.yarn.core.POS getPOS() {
                 edu.mit.jwi.item.POS pos = synset.getPOS();
                 if (pos != null) {
                     switch (pos) {
                         case NOUN:
-                            return POS.NOUN;
+                            return ru.georgeee.bachelor.yarn.core.POS.NOUN;
                         case VERB:
-                            return POS.VERB;
+                            return ru.georgeee.bachelor.yarn.core.POS.VERB;
                         case ADJECTIVE:
-                            return POS.ADJECTIVE;
+                            return ru.georgeee.bachelor.yarn.core.POS.ADJECTIVE;
                         case ADVERB:
-                            return POS.ADVERB;
+                            return ru.georgeee.bachelor.yarn.core.POS.ADVERB;
                     }
                 }
                 return null;

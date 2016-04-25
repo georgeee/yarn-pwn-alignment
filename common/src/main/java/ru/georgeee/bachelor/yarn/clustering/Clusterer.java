@@ -4,9 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
-import ru.georgeee.bachelor.yarn.graph.TranslationLink;
+import ru.georgeee.bachelor.yarn.core.NodeRepository;
+import ru.georgeee.bachelor.yarn.core.SynsetNode;
+import ru.georgeee.bachelor.yarn.core.TranslationLink;
 
 import java.util.*;
 

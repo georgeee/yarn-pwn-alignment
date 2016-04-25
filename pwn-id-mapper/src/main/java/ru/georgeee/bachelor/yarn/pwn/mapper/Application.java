@@ -18,10 +18,10 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import ru.georgeee.bachelor.yarn.alignment.Metrics;
-import ru.georgeee.bachelor.yarn.alignment.PWNNodeRepository;
-import ru.georgeee.bachelor.yarn.graph.Query;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
+import ru.georgeee.bachelor.yarn.app.Metrics;
+import ru.georgeee.bachelor.yarn.app.PWNNodeRepository;
+import ru.georgeee.bachelor.yarn.core.Query;
+import ru.georgeee.bachelor.yarn.core.SynsetNode;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;

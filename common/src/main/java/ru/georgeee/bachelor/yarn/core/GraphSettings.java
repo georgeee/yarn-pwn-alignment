@@ -1,4 +1,4 @@
-package ru.georgeee.bachelor.yarn.graph;
+package ru.georgeee.bachelor.yarn.core;
 
 import lombok.Getter;
 import lombok.Setter;

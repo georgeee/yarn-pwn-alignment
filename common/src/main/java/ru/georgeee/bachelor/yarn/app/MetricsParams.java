@@ -1,4 +1,4 @@
-package ru.georgeee.bachelor.yarn.alignment;
+package ru.georgeee.bachelor.yarn.app;
 
 import lombok.Getter;
 import lombok.Setter;

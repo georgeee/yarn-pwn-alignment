@@ -1,4 +1,7 @@
-package ru.georgeee.bachelor.yarn.alignment;
+package ru.georgeee.bachelor.yarn.dict;
+
+import ru.georgeee.bachelor.yarn.dict.Dict;
+import ru.georgeee.bachelor.yarn.core.POS;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -16,8 +19,8 @@ public class StatTrackingDict implements Dict {
     }
 
     @Override
-    public List<List<String>> translate(String word) {
-        List<List<String>> translations = dict.translate(word);
+    public List<Translation> translate(String word) {
+        List<Translation> translations = dict.translate(word);
         if (translations.isEmpty()) {
             notTranslated.add(word);
         }

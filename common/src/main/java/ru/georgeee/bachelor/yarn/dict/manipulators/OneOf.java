@@ -1,19 +1,21 @@
-package ru.georgeee.bachelor.yarn.alignment;
+package ru.georgeee.bachelor.yarn.dict.manipulators;
+
+import ru.georgeee.bachelor.yarn.dict.Dict;
 
 import java.util.Collections;
 import java.util.List;
 
-public class CompositeDict implements Dict {
+public class OneOf implements Dict {
     private final List<Dict> dicts;
 
-    public CompositeDict(List<Dict> dicts) {
+    public OneOf(List<Dict> dicts) {
         this.dicts = dicts;
     }
 
     @Override
-    public List<List<String>> translate(String word) {
+    public List<Translation> translate(String word) {
         for (Dict dict : dicts) {
-            List<List<String>> tr = dict.translate(word);
+            List<Translation> tr = dict.translate(word);
             if (tr != null && !tr.isEmpty()) {
                 return tr;
             }

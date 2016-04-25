@@ -1,4 +1,4 @@
-package ru.georgeee.bachelor.yarn.graph;
+package ru.georgeee.bachelor.yarn.core;
 
 import lombok.Getter;
 
@@ -42,7 +42,4 @@ public abstract class SynsetNode<T, V> {
         return "{id=" + getId() + ": " + getWords() + " (" + getGloss() + ")}";
     }
 
-    public enum POS {
-        NOUN, VERB, ADJECTIVE, ADVERB;
-    }
 }

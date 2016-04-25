@@ -6,6 +6,7 @@ import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -14,8 +15,11 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.georgeee.bachelor.yarn.Yarn;
+import ru.georgeee.bachelor.yarn.app.*;
 import ru.georgeee.bachelor.yarn.clustering.Clusterer;
-import ru.georgeee.bachelor.yarn.graph.*;
+import ru.georgeee.bachelor.yarn.dict.Dict;
+import ru.georgeee.bachelor.yarn.core.*;
+import ru.georgeee.bachelor.yarn.dict.StatTrackingDict;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 
 import javax.annotation.PostConstruct;
@@ -38,20 +42,8 @@ public class Application implements CommandLineRunner {
     @Value("${yarn.xml}")
     private String yarnXmlPath;
 
-    @Value("${dict.en_ru}")
-    private String enRuDictPath;
-
-    @Value("${dict.ru_en}")
-    private String ruEnDictPath;
-
     @Value("${gv.out:out.dot}")
     private String graphvizOutFile;
-
-    @Value("${dict.stats:false}")
-    private boolean dictCollectStats;
-
-    @Autowired
-    private DictFactory dictFactory;
 
     @Autowired
     private MetricsParams params;
@@ -59,7 +51,12 @@ public class Application implements CommandLineRunner {
     @Autowired
     private Metrics metrics;
 
+    @Autowired
+    @Qualifier("enRuDict")
     private Dict enRuDict;
+
+    @Autowired
+    @Qualifier("ruEnDict")
     private Dict ruEnDict;
 
     private Yarn yarn;
@@ -85,19 +82,9 @@ public class Application implements CommandLineRunner {
 
     @PostConstruct
     private void init() throws IOException, JAXBException {
-        enRuDict = initDict(enRuDictPath);
-        ruEnDict = initDict(ruEnDictPath);
         yarn = Yarn.create(Paths.get(yarnXmlPath));
         pwnDict = new Dictionary(new URL("file", null, pwnHomePath));
         pwnDict.open();
-    }
-
-    private Dict initDict(String settingsString) throws IOException {
-        Dict dict = dictFactory.getDict(settingsString);
-        if (dictCollectStats) {
-            return new StatTrackingDict(dict);
-        }
-        return dict;
     }
 
     @Override
@@ -148,24 +135,6 @@ public class Application implements CommandLineRunner {
                                 try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(q))) {
                                     printDictStats(bw);
                                 }
-                            }
-                            break;
-                        }
-                        case "tse": {
-                            try {
-                                JdbcTemplate t = (JdbcTemplate) context.getBean("enwikt.jdbc");
-                                System.out.println(t.queryForList(q));
-                            } catch (Exception e) {
-                                e.printStackTrace();
-                            }
-                            break;
-                        }
-                        case "tsr": {
-                            try {
-                                JdbcTemplate t = (JdbcTemplate) context.getBean("ruwikt.jdbc");
-                                System.out.println(t.queryForList(q));
-                            } catch (Exception e) {
-                                e.printStackTrace();
                             }
                             break;
                         }

@@ -1,11 +1,12 @@
-package ru.georgeee.bachelor.yarn.alignment;
+package ru.georgeee.bachelor.yarn.app;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.georgeee.bachelor.yarn.Yarn;
-import ru.georgeee.bachelor.yarn.graph.Query;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
-import ru.georgeee.bachelor.yarn.graph.NodeRepository;
+import ru.georgeee.bachelor.yarn.core.POS;
+import ru.georgeee.bachelor.yarn.core.Query;
+import ru.georgeee.bachelor.yarn.core.SynsetNode;
+import ru.georgeee.bachelor.yarn.core.NodeRepository;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 import ru.georgeee.bachelor.yarn.xml.WordEntry;
 
@@ -22,14 +23,14 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
         this.yarn = yarn;
     }
 
-    public static SynsetNode.POS getPOS(WordEntry wordEntry) {
+    public static POS getPOS(WordEntry wordEntry) {
         String grammar = wordEntry.getGrammar();
         if (grammar.indexOf('n') != -1) {
-            return SynsetNode.POS.NOUN;
+            return POS.NOUN;
         } else if (grammar.indexOf('v') != -1) {
-            return SynsetNode.POS.VERB;
+            return POS.VERB;
         } else if (grammar.indexOf('a') != -1) {
-            return SynsetNode.POS.ADJECTIVE;
+            return POS.ADJECTIVE;
         }
         log.warn("Unknown grammar {} for {} (can't extract POS)", grammar, Yarn.toString(wordEntry));
         return null;

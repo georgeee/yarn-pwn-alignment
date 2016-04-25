@@ -1,11 +1,11 @@
 package ru.georgeee.bachelor.yarn.clustering;
 
 import lombok.Getter;
-import lombok.ToString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import ru.georgeee.bachelor.yarn.graph.SynsetNode;
-import ru.georgeee.bachelor.yarn.graph.TranslationLink;
+import ru.georgeee.bachelor.yarn.core.POS;
+import ru.georgeee.bachelor.yarn.core.SynsetNode;
+import ru.georgeee.bachelor.yarn.core.TranslationLink;
 
 import java.util.Iterator;
 import java.util.Set;

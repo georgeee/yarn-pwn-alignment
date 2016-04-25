@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd">
+    <!-- remove primary later -->
+    <bean id="enwiktDS" class="org.apache.tomcat.jdbc.pool.DataSource" primary="true" destroy-method="close">
+        <property name="testOnBorrow" value="true"/>
+        <property name="validationQuery" value="SELECT 1"/>
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url"
+                  value="jdbc:mysql://localhost/enwikt?useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=Europe/Moscow&amp;useSSL=false"/>
+        <property name="username" value="root"/>
+        <property name="password" value="krispo"/>
+    </bean>
+    <bean id="ruwiktDS" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
+        <property name="testOnBorrow" value="true"/>
+        <property name="validationQuery" value="SELECT 1"/>
+        <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="url"
+                  value="jdbc:mysql://localhost/ruwikt?useUnicode=true&amp;useJDBCCompliantTimezoneShift=true&amp;useLegacyDatetimeCode=false&amp;serverTimezone=Europe/Moscow&amp;useSSL=false"/>
+        <property name="username" value="root"/>
+        <property name="password" value="krispo"/>
+    </bean>
+    <bean id="enwiktDictEngine" class="ru.georgeee.bachelor.yarn.dict.wikt.WiktionaryDictEngine">
+        <constructor-arg>
+            <bean class="org.springframework.jdbc.core.JdbcTemplate">
+                <constructor-arg ref="enwiktDS"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+    <bean id="ruwiktDictEngine" class="ru.georgeee.bachelor.yarn.dict.wikt.WiktionaryDictEngine">
+        <constructor-arg>
+            <bean class="org.springframework.jdbc.core.JdbcTemplate">
+                <constructor-arg ref="ruwiktDS"/>
+            </bean>
+        </constructor-arg>
+    </bean>
+    <bean id="yaDictEngine" class="ru.georgeee.bachelor.yarn.dict.ya.YandexDictEngine">
+        <constructor-arg value="dict.1.1.20160323T065926Z.e566e6436dd96c39.330838c11d36aa78b54c1721cd796e0c14979083"/>
+    </bean>
+    <bean id="starEnRu" class="ru.georgeee.bachelor.yarn.dict.stardict.DictImpl">
+        <constructor-arg value="dicts/stardict/enru-lingvo.idx"/>
+        <constructor-arg value="dicts/stardict/enru-lingvo.dict"/>
+    </bean>
+    <bean id="starRuEn" class="ru.georgeee.bachelor.yarn.dict.stardict.DictImpl">
+        <constructor-arg value="dicts/stardict/ruen-lingvo.idx"/>
+        <constructor-arg value="dicts/stardict/ruen-lingvo.dict"/>
+    </bean>
+    <bean id="wiktEnRu" class="ru.georgeee.bachelor.yarn.dict.wikt.DictImpl">
+        <constructor-arg ref="enwiktDictEngine"/>
+        <constructor-arg value="EN"/>
+        <constructor-arg value="RU"/>
+    </bean>
+    <bean id="wiktRuEn" class="ru.georgeee.bachelor.yarn.dict.wikt.DictImpl">
+        <constructor-arg ref="ruwiktDictEngine"/>
+        <constructor-arg value="RU"/>
+        <constructor-arg value="EN"/>
+    </bean>
+    <bean id="yaRuEn" class="ru.georgeee.bachelor.yarn.dict.ya.DictImpl">
+        <constructor-arg ref="yaDictEngine"/>
+        <constructor-arg value="ru-en"/>
+    </bean>
+    <bean id="yaEnRu" class="ru.georgeee.bachelor.yarn.dict.ya.DictImpl">
+        <constructor-arg ref="yaDictEngine"/>
+        <constructor-arg value="en-ru"/>
+    </bean>
+    <bean id="ruEnDict" class="ru.georgeee.bachelor.yarn.dict.manipulators.OneOf">
+        <constructor-arg>
+            <list>
+                <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.MergeAll">
+                    <constructor-arg>
+                        <list>
+                            <ref bean="wiktRuEn"/>
+                            <ref bean="starRuEn"/>
+                        </list>
+                    </constructor-arg>
+                </bean>
+                <ref bean="yaRuEn"/>
+            </list>
+        </constructor-arg>
+    </bean>
+    <bean id="enRuDict" class="ru.georgeee.bachelor.yarn.dict.manipulators.OneOf">
+        <constructor-arg>
+            <list>
+                <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.MergeAll">
+                    <constructor-arg>
+                        <list>
+                            <ref bean="wiktEnRu"/>
+                            <ref bean="starEnRu"/>
+                        </list>
+                    </constructor-arg>
+                </bean>
+                <ref bean="yaEnRu"/>
+            </list>
+        </constructor-arg>
+    </bean>
+</beans>

@@ -3,13 +3,11 @@ package ru.georgeee.bachelor.yarn.app;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.georgeee.bachelor.yarn.Yarn;
-import ru.georgeee.bachelor.yarn.core.POS;
-import ru.georgeee.bachelor.yarn.core.Query;
-import ru.georgeee.bachelor.yarn.core.SynsetNode;
-import ru.georgeee.bachelor.yarn.core.NodeRepository;
+import ru.georgeee.bachelor.yarn.core.*;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 import ru.georgeee.bachelor.yarn.xml.WordEntry;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -52,7 +50,15 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
         return new SynsetNode<SynsetEntry, V>() {
             @Override
             public String getGloss() {
-                return null;
+                List<String> glosses = getGlosses();
+                return glosses.isEmpty() ? null : glosses.get(0);
+            }
+
+            @Override
+            public List<String> getGlosses() {
+                List<String> glosses = new ArrayList<>();
+                getWordsWithData().stream().forEach(w -> glosses.addAll(w.getGlosses()));
+                return glosses;
             }
 
             @Override
@@ -68,6 +74,24 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
 //                        log.warn("Discrepancy in data: {}", Yarn.toString(synset));
                     } else {
                         words.add(((WordEntry) w.getRef()).getWord());
+                    }
+                }
+                return words;
+            }
+
+            @Override
+            public List<WordData> getWordsWithData() {
+                List<WordData> words = new ArrayList<>();
+                for (SynsetEntry.Word w : synset.getWord()) {
+                    if (w == null || w.getRef() == null) {
+//                        log.warn("Discrepancy in data: {}", Yarn.toString(synset));
+                    } else {
+                        WordEntry we = (WordEntry) w.getRef();
+                        WordData wordData = new WordData();
+                        wordData.setLemma(we.getWord());
+                        wordData.setGlosses(w.getDefinition().stream().map(SynsetEntry.Word.Definition::getValue).collect(Collectors.toList()));
+                        wordData.setExamples(w.getExample().stream().map(SynsetEntry.Word.Example::getValue).collect(Collectors.toList()));
+                        words.add(wordData);
                     }
                 }
                 return words;

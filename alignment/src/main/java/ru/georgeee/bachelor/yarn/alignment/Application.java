@@ -16,6 +16,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.georgeee.bachelor.yarn.Yarn;
 import ru.georgeee.bachelor.yarn.app.*;
+import ru.georgeee.bachelor.yarn.clustering.Cluster;
 import ru.georgeee.bachelor.yarn.clustering.Clusterer;
 import ru.georgeee.bachelor.yarn.dict.Dict;
 import ru.georgeee.bachelor.yarn.core.*;
@@ -29,9 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 @SpringBootApplication(scanBasePackages = {"ru.georgeee.bachelor.yarn"})
 public class Application implements CommandLineRunner {
@@ -164,12 +163,30 @@ public class Application implements CommandLineRunner {
                         builder.addIgnored(traverser.getRemained());
                         builder.addRepo(pwnRepo);
                         builder.addRepo(yarnRepo);
-                        List<SynsetNode<?, ?>> created = new ArrayList<>(builder.getCreated());
-                        Collections.sort(created, (s1, s2) -> s1.getId().compareTo(s2.getId()));
-                        created.stream().forEach(System.out::println);
+                        printNodes(builder.getCreated());
                     }
                 }
             }
+        }
+    }
+
+    private void printNodes(Collection<? extends SynsetNode<?, ?>> created) {
+        TreeSet<SynsetNode<?, ?>> unrolled = new TreeSet<>((s1, s2) -> s1.getId().compareTo(s2.getId()));
+        created.stream().forEach(n -> unrollNode(n, unrolled));
+        unrolled.stream().forEach(System.out::println);
+    }
+
+    private void unrollCluster(Cluster<?, ?> cluster, Set<SynsetNode<?, ?>> unrolled) {
+        for (Cluster.Member<?, ?> n : cluster) {
+            unrollNode(n.getNode(), unrolled);
+        }
+    }
+
+    private void unrollNode(SynsetNode<?, ?> node, Set<SynsetNode<?, ?>> unrolled) {
+        if (node instanceof Cluster) {
+            unrollCluster((Cluster<?, ?>) node, unrolled);
+        } else {
+            unrolled.add(node);
         }
     }
 

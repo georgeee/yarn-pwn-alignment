@@ -68,7 +68,7 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         return null;
     }
 
-    private ISynset getSynset(String id){
+    private ISynset getSynset(String id) {
         try {
             return pwnDict.getSynset(SynsetID.parseSynsetID(id));
         } catch (IllegalArgumentException e) {
@@ -76,11 +76,16 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         }
     }
 
+
     @Override
     protected SynsetNode<ISynset, V> createNode(String id) {
         ISynset synset = getSynset(id);
         if (synset == null) return null;
         return new SynsetNode<ISynset, V>() {
+            private String getPWNLemma(IWord w) {
+                return w.getLemma().replace('_', ' ');
+            }
+
             @Override
             public String getGloss() {
                 return synset.getGloss();
@@ -94,7 +99,17 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
             @Override
             public Set<String> getWords() {
                 return synset.getWords().stream()
-                        .map(w -> w.getLemma().replace('_', ' ')).collect(Collectors.toSet());
+                        .map(this::getPWNLemma).collect(Collectors.toSet());
+            }
+
+            @Override
+            public List<WordData> getWordsWithData() {
+                return synset.getWords().stream().map(w -> {
+                    String lemma = getPWNLemma(w);
+                    WordData wordData = new WordData();
+                    wordData.setLemma(lemma);
+                    return wordData;
+                }).collect(Collectors.toList());
             }
 
             @Override

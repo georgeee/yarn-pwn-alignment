@@ -6,8 +6,10 @@ import org.slf4j.LoggerFactory;
 import ru.georgeee.bachelor.yarn.core.POS;
 import ru.georgeee.bachelor.yarn.core.SynsetNode;
 import ru.georgeee.bachelor.yarn.core.TranslationLink;
+import ru.georgeee.bachelor.yarn.core.WordData;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -53,6 +55,11 @@ public class Cluster<T, V> extends SynsetNode<T, V> implements Comparable<Cluste
     }
 
     @Override
+    public List<WordData> getWordsWithData() {
+        return members.first().getNode().getWordsWithData();
+    }
+
+    @Override
     public POS getPOS() {
         return members.first().getNode().getPOS();
     }
@@ -65,6 +72,14 @@ public class Cluster<T, V> extends SynsetNode<T, V> implements Comparable<Cluste
     @Override
     public Iterator<Member<T, V>> iterator() {
         return members.iterator();
+    }
+
+    @Override
+    public String toString() {
+        return "Cluster{" +
+                "id='" + id + '\'' +
+                ", members=" + members +
+                '}';
     }
 
     @Getter

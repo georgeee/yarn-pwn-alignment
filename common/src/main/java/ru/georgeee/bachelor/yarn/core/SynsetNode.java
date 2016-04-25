@@ -31,15 +31,22 @@ public abstract class SynsetNode<T, V> {
 
     public abstract String getGloss();
 
+    public List<String> getGlosses() {
+        String gloss = getGloss();
+        return gloss == null ? Collections.emptyList() : Collections.singletonList(gloss);
+    }
+
     public abstract String getId();
 
     public abstract Set<String> getWords();
+
+    public abstract List<WordData> getWordsWithData();
 
     public abstract POS getPOS();
 
     @Override
     public String toString() {
-        return "{id=" + getId() + ": " + getWords() + " (" + getGloss() + ")}";
+        return "{id=" + getId() + ": " + getWordsWithData() + " (" + getGloss() + ")}";
     }
 
 }

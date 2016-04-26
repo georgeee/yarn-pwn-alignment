@@ -74,6 +74,7 @@ public class Application implements CommandLineRunner {
     private ApplicationContext context;
 
     public static void main(String[] args) throws Exception {
+        //@TODO Next step: imageNet image downloader (separate app)
         SpringApplication application = new SpringApplication(Application.class);
         application.setApplicationContextClass(AnnotationConfigApplicationContext.class);
         SpringApplication.run(Application.class, args);

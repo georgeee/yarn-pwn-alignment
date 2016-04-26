@@ -140,7 +140,10 @@ public class Application implements CommandLineRunner {
                 if (matchedByGlossId != null) {
                     addResult(origId, matchedByGlossId);
                 } else {
-                    verboseResult.put(origId, prepareVerboseIds(origId, ids.getRight()));
+                    SrcEntry entry = prepareVerboseIds(origId, ids.getRight());
+                    if (entry != null) {
+                        verboseResult.put(origId, entry);
+                    }
                 }
             }
         }
@@ -171,6 +174,10 @@ public class Application implements CommandLineRunner {
 
     private SrcEntry prepareVerboseIds(String id, Collection<Pair<Double, String>> ids) {
         SynsetNode<ISynset, ?> node = srcNodeRepository.getNodeById(id);
+        if (node == null) {
+            log.warn("Synset {} doesn't exist", id);
+            return null;
+        }
         List<DestEntry> entries = ids.stream().map(e -> prepareVerbose(node, e)).collect(Collectors.toList());
         Collections.sort(entries, (a, b) -> -Double.compare(a.getJaccardIndex(), b.getJaccardIndex()));
         return new SrcEntry(node.getGloss(), node.getWords(), entries);

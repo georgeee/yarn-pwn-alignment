@@ -1,14 +1,14 @@
 package ru.georgeee.bachelor.yarn.dict.wikt;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.spi.LoggerFactory;
 import ru.georgeee.bachelor.yarn.dict.Dict;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
 
 public class DictImpl implements Dict {
-    private static final Logger log = Logger.getLogger(DictImpl.class);
+    private static final Logger log = LoggerFactory.getLogger(DictImpl.class);
 
     private final WiktionaryDictEngine dict;
     private final WiktLang from;

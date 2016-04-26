@@ -9,6 +9,7 @@ import org.apache.http.config.SocketConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,7 +36,7 @@ import java.util.stream.Collectors;
 public class Application implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(Application.class);
     private static final Pattern WN_ID_PATTERN = Pattern.compile("^SID-([0-9]+)-([A-Za-z]+)$");
-    private static final String IMAGENET_GET_URLS_BASE = "http://www.image-net.org/api/text/imagenet.synset.geturls?wnid=";
+    private static final String IMAGENET_GET_URLS_BASE = "http://www.image-net.org/api/text/imagenet.synset.geturls.getmapping?wnid=";
     private CloseableHttpClient httpClient;
     @Value("${input}")
     private String inputFilePathString;
@@ -47,28 +48,20 @@ public class Application implements CommandLineRunner {
     private String imagenetIdMappingPathString;
     @Value("${limit:15}")
     private int limit;
+    @Value("${imagenet.downloader.retryTimeout:8000}")
+    private int retryTimeout;
+    @Value("${imagenet.downloader.threads:10}")
+    private int threadCount;
+
     private Map<String, String> imagenetIdMapping;
     private Path imagesDirPath;
     private Path inputFilePath;
-    private ExecutorService executorService;
+    private ScheduledExecutorService executorService;
 
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
         application.setApplicationContextClass(AnnotationConfigApplicationContext.class);
         SpringApplication.run(Application.class, args);
-    }
-
-    private static void awaitFutures(Collection<? extends Future<?>> futures) {
-        for (Future<?> future : futures) {
-            try {
-                future.get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                break;
-            } catch (ExecutionException e) {
-                log.error("Failed to execute task", e);
-            }
-        }
     }
 
     @PostConstruct
@@ -80,13 +73,14 @@ public class Application implements CommandLineRunner {
             throw new IllegalArgumentException("File " + inputFilePathString + " is not a regular file");
         }
         imagenetIdMapping = Collections.unmodifiableMap(AppUtils.loadIdMapping(Paths.get(imagenetIdMappingPathString), true));
-        BasicHttpClientConnectionManager connManager = new BasicHttpClientConnectionManager();
-        connManager.setSocketConfig(SocketConfig.custom().setSoTimeout(soTimeout).build());
+        PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
+        connManager.setMaxTotal(threadCount);
+        connManager.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(soTimeout).build());
         httpClient = HttpClientBuilder.create()
                 .setRedirectStrategy(new ImagenetDownloaderRedirectStrategy())
                 .setConnectionManager(connManager)
                 .build();
-        executorService = Executors.newCachedThreadPool();
+        executorService = Executors.newScheduledThreadPool(threadCount);
     }
 
     @PreDestroy
@@ -96,22 +90,23 @@ public class Application implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws IOException {
-        List<Future<?>> futures = Files.lines(inputFilePath)
+        Files.lines(inputFilePath)
                 .map(String::trim)
                 .filter(StringUtils::isNotEmpty)
                 .filter(imagenetIdMapping::containsKey)
                 .map(id -> executorService.submit(() -> processId(id)))
                 .collect(Collectors.toList());
-        awaitFutures(futures);
     }
 
     private void processId(String id) {
+        log.info("Getting url list for {}", id);
         String wn30Id = imagenetIdMapping.get(id);
         List<String> urls;
         try {
             urls = getUrlList(wn30Id);
         } catch (IOException | IllegalArgumentException e) {
-            log.warn("Error loading urls", e);
+            log.warn("Error loading urls for id {} ({})", id, wn30Id, e);
+            executorService.schedule(() -> processId(id), retryTimeout, TimeUnit.MILLISECONDS);
             return;
         }
         try {
@@ -122,6 +117,7 @@ public class Application implements CommandLineRunner {
     }
 
     private boolean tryDownload(Path idImagesDirPath, String l) {
+        log.info("Downloading {} to {}", l, idImagesDirPath);
         String[] parts = l.trim().split("\\s+", 2);
         if (parts.length < 2) {
             return false;
@@ -133,11 +129,11 @@ public class Application implements CommandLineRunner {
         if (Files.exists(filePath)) {
             return true;
         }
-        HttpGet httpGet = new HttpGet(url);
         CloseableHttpResponse response;
         try {
+            HttpGet httpGet = new HttpGet(url);
             response = httpClient.execute(httpGet);
-        } catch (IOException e) {
+        } catch (IllegalArgumentException | IOException e) {
             log.debug("Error getting url {}", url, e);
             return false;
         }
@@ -169,7 +165,7 @@ public class Application implements CommandLineRunner {
             InputStream is = httpClient.execute(httpGet).getEntity().getContent();
             List<String> urls = IOUtils.readLines(is);
             if (urls.isEmpty() || (urls.size() == 1 && urls.get(0).equals("Invalid url!"))) {
-                throw new IllegalArgumentException("Id not fount in imagenet: " + wn30Id);
+                throw new IllegalArgumentException("Id not found in imagenet: " + wn30Id);
             }
             return urls;
         } else {
@@ -194,25 +190,24 @@ public class Application implements CommandLineRunner {
         void download() throws IOException {
             Path idImagesDirPath = imagesDirPath.resolve(id);
             Files.createDirectories(idImagesDirPath);
-            List<Future<?>> futures = new ArrayList<>(limit_);
             for (int i = 0; i < limit_; ++i) {
                 int i_ = i;
-                futures.add(executorService.submit(() -> {
+                executorService.submit(() -> {
                     boolean success = tryDownload(idImagesDirPath, urlDescs.get(i_));
                     while (!success) {
                         String ud;
+                        int i2;
                         synchronized (monitor) {
-                            int i2 = urlsTaken++;
+                            i2 = urlsTaken++;
                             if (i2 >= urlDescs.size()) {
                                 break;
                             }
-                            ud = urlDescs.get(i2);
                         }
+                        ud = urlDescs.get(i2);
                         success = tryDownload(idImagesDirPath, ud);
                     }
-                }));
+                });
             }
-            awaitFutures(futures);
         }
 
     }

@@ -10,6 +10,9 @@ gr:
     maxEdges: 25
     depth: 2
 
+imagenet:
+  mapping_30_31: id-files/imagenet30-31.mapping.txt
+  imagesDir: misc/imagenet
 
 app:
     dictXml: file://${user.dir}/config/dicts.xml

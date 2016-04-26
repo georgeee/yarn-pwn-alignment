@@ -17,6 +17,12 @@
     </modules>
     <profiles>
         <profile>
+            <id>imagenet-downloader</id>
+            <modules>
+                <module>imagenet-downloader</module>
+            </modules>
+        </profile>
+        <profile>
             <id>yarn-xml</id>
             <modules>
                 <module>yarn-xml</module>

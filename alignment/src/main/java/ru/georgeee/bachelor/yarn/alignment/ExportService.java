@@ -63,14 +63,14 @@ public class ExportService {
     @Autowired
     private ApplicationContext context;
     @Autowired
-    private ExportServiceInternal exportServiceInternal;
+    private ExportServiceDB exportServiceDB;
 
     public void exportToDb(Aligner.Result result) {
         for (SynsetNode<ISynset, SynsetEntry> pwnNode : result.getPwnRepo().getNodes()) {
             if (result.getIgnored().contains(pwnNode)) {
                 continue;
             }
-            exportServiceInternal.exportToDb(pwnNode);
+            exportServiceDB.exportToDb(pwnNode);
         }
     }
 

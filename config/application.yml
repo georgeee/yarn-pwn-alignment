@@ -4,6 +4,7 @@ yarn:
     xml: yarn/yarn.xml
 gv:
     out: out2.dot
+    threshold: 0.2
 gr:
     threshold: 0.2
     maxEdges: 25
@@ -15,7 +16,6 @@ imagenet:
 
 app:
     dictXml: file://${user.dir}/config/dicts.xml
-
 spring:
     jpa:
         database: POSTGRESQL

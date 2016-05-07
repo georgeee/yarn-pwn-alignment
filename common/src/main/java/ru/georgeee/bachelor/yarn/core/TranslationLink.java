@@ -8,18 +8,22 @@ import java.util.Collections;
 
 @Getter
 public class TranslationLink {
-    private final String word;
+    private final WordData wordData;
     private final Dict.Translation translation;
     @Setter
     private double weight;
 
-    public TranslationLink(String word, Dict.Translation translation, double weight) {
-        this.word = word;
+    public TranslationLink(WordData wordData, Dict.Translation translation, double weight) {
+        this.wordData = wordData;
         this.translation = translation;
         this.weight = weight;
     }
 
+    public String getWord(){
+        return wordData == null ? null : wordData.getLemma();
+    }
+
     public TranslationLink(double weight) {
-        this(null, new Dict.Translation(Collections.emptyList()), weight);
+        this(null, new Dict.Translation(Collections.emptySet()), weight);
     }
 }

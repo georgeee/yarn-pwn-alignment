@@ -5,23 +5,24 @@ import lombok.ToString;
 import ru.georgeee.bachelor.yarn.core.POS;
 
 import java.util.List;
+import java.util.Set;
 
 public interface Dict {
     List<Translation> translate(String word);
 
     @Getter @ToString
     class Translation {
-        private final List<String> words;
+        private final Set<String> words;
         private final POS pos;
         private final String gloss;
 
-        public Translation(List<String> words, POS pos, String gloss) {
+        public Translation(Set<String> words, POS pos, String gloss) {
             this.words = words;
             this.pos = pos;
             this.gloss = gloss;
         }
 
-        public Translation(List<String> words) {
+        public Translation(Set<String> words) {
             this(words, null, null);
         }
     }

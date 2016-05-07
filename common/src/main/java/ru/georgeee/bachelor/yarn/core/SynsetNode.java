@@ -31,11 +31,6 @@ public abstract class SynsetNode<T, V> {
 
     public abstract String getGloss();
 
-    public List<String> getGlosses() {
-        String gloss = getGloss();
-        return gloss == null ? Collections.emptyList() : Collections.singletonList(gloss);
-    }
-
     public abstract String getId();
 
     public abstract Set<String> getWords();

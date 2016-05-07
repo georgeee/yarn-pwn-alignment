@@ -83,8 +83,18 @@ public class WiktionaryDictEngine {
         });
         return byTransId.values().stream().map(ls -> {
             RowTranslationResult fst = ls.get(0);
-            List<String> words = ls.stream().map(RowTranslationResult::getText).collect(Collectors.toList());
-            return new Dict.Translation(words, posMapping.getById(fst.posId), fst.meaningSummary);
+            String gloss = fst.meaningSummary;
+            if (gloss != null) {
+                gloss = gloss.trim();
+                if (gloss.isEmpty()) {
+                    gloss = null;
+                }
+            }
+            Set<String> words = new LinkedHashSet<>();
+            for (RowTranslationResult r : ls) {
+                words.add(r.getText());
+            }
+            return new Dict.Translation(words, posMapping.getById(fst.posId), gloss);
         }).collect(Collectors.toList());
     }
 

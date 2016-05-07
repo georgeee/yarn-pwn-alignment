@@ -76,16 +76,34 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         }
     }
 
+    private static String getPWNLemma(IWord w) {
+        return w.getLemma().replace('_', ' ');
+    }
+
+    private ru.georgeee.bachelor.yarn.core.POS determinePos(POS pos) {
+        if (pos != null) {
+            switch (pos) {
+                case NOUN:
+                    return ru.georgeee.bachelor.yarn.core.POS.NOUN;
+                case VERB:
+                    return ru.georgeee.bachelor.yarn.core.POS.VERB;
+                case ADJECTIVE:
+                    return ru.georgeee.bachelor.yarn.core.POS.ADJECTIVE;
+                case ADVERB:
+                    return ru.georgeee.bachelor.yarn.core.POS.ADVERB;
+            }
+        }
+        return null;
+    }
 
     @Override
     protected SynsetNode<ISynset, V> createNode(String id) {
         ISynset synset = getSynset(id);
         if (synset == null) return null;
+        Set<String> words = synset.getWords().stream()
+                .map(PWNNodeRepository::getPWNLemma).collect(Collectors.toSet());
+        ru.georgeee.bachelor.yarn.core.POS pos = determinePos(synset.getPOS());
         return new SynsetNode<ISynset, V>() {
-            private String getPWNLemma(IWord w) {
-                return w.getLemma().replace('_', ' ');
-            }
-
             @Override
             public String getGloss() {
                 return synset.getGloss();
@@ -98,8 +116,7 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
 
             @Override
             public Set<String> getWords() {
-                return synset.getWords().stream()
-                        .map(this::getPWNLemma).collect(Collectors.toSet());
+                return words;
             }
 
             @Override
@@ -114,20 +131,7 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
 
             @Override
             public ru.georgeee.bachelor.yarn.core.POS getPOS() {
-                edu.mit.jwi.item.POS pos = synset.getPOS();
-                if (pos != null) {
-                    switch (pos) {
-                        case NOUN:
-                            return ru.georgeee.bachelor.yarn.core.POS.NOUN;
-                        case VERB:
-                            return ru.georgeee.bachelor.yarn.core.POS.VERB;
-                        case ADJECTIVE:
-                            return ru.georgeee.bachelor.yarn.core.POS.ADJECTIVE;
-                        case ADVERB:
-                            return ru.georgeee.bachelor.yarn.core.POS.ADVERB;
-                    }
-                }
-                return null;
+                return pos;
             }
 
             @Override

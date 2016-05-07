@@ -76,7 +76,7 @@
                         </list>
                     </constructor-arg>
                 </bean>
-                <ref bean="yaRuEn"/>
+                <!--<ref bean="yaRuEn"/>-->
             </list>
         </constructor-arg>
     </bean>
@@ -91,7 +91,7 @@
                         </list>
                     </constructor-arg>
                 </bean>
-                <ref bean="yaEnRu"/>
+                <!--<ref bean="yaEnRu"/>-->
             </list>
         </constructor-arg>
     </bean>

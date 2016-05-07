@@ -91,8 +91,28 @@ public class GraphVizBuilder implements AutoCloseable {
                 .append(", label=\"")
                 .append(String.format("%.2f {%.2f, %.2f}", weight, weight1, weight2))
                 .append("\"];\n");
-        log.info("{} -> {}: {} (word {})", from.getId(), to.getId(), link1 == null ? null : link1.getTranslation(), link1 == null ? null : link1.getWord());
-        log.info("{} -> {}: {} (word {})", to.getId(), from.getId(), link2 == null ? null : link2.getTranslation(), link2 == null ? null : link2.getWord());
+        logEdge(from, to, link1);
+        logEdge(from, to, link2);
+    }
+
+    private void logEdge(SynsetNode<?, ?> from, SynsetNode<?, ?> to, TranslationLink link) {
+        if (from instanceof Cluster ^ to instanceof Cluster) {
+            if (from instanceof Cluster) {
+                for (Cluster.Member<?, ?> fm : (Cluster<?, ?>) from) {
+                    logEdgeImpl(fm.getNode(), to, fm.getLink());
+                }
+            } else {
+                for (Cluster.Member<?, ?> tm : (Cluster<?, ?>) to) {
+                    logEdgeImpl(from, tm.getNode(), tm.getRLink());
+                }
+            }
+        } else {
+            logEdgeImpl(from, to, link);
+        }
+    }
+
+    private void logEdgeImpl(SynsetNode<?, ?> from, SynsetNode<?, ?> to, TranslationLink link) {
+        log.debug("{} -> {}: {} (word {})", from.getId(), to.getId(), link == null ? null : link.getTranslation(), link == null ? null : link.getWord());
     }
 
     private String gvEscapeId(String id) {

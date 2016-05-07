@@ -20,10 +20,10 @@ public class Clusterer {
         for (SynsetNode<T, V> srcNode : repo.getNodes()) {
             PriorityQueue<Cluster.Member<V, T>> preClusters = new PriorityQueue<>();
             for (Map.Entry<SynsetNode<V, T>, TranslationLink> entry : srcNode.getEdges().entrySet()) {
-                double weight = entry.getValue().getWeight();
+                TranslationLink link = entry.getValue();
+                double weight = link.getWeight();
                 TranslationLink rLink = entry.getKey().getEdges().get(srcNode);
-                double rWeight = rLink == null ? 0 : rLink.getWeight();
-                preClusters.add(new Cluster.Member<>(entry.getKey(), weight, rWeight));
+                preClusters.add(new Cluster.Member<>(entry.getKey(), link, rLink));
             }
             List<Cluster<V, T>> clusters = new ArrayList<>();
             while (!preClusters.isEmpty()) {

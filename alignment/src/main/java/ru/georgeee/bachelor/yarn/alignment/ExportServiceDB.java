@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 @Component
-class ExportServiceInternal {
-    private static final Logger log = LoggerFactory.getLogger(ExportServiceInternal.class);
+class ExportServiceDB {
+    private static final Logger log = LoggerFactory.getLogger(ExportServiceDB.class);
     @Autowired
     private GraphSettings grSettings;
     @Autowired

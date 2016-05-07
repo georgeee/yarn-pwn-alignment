@@ -1,5 +1,6 @@
 package ru.georgeee.bachelor.yarn.app;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import ru.georgeee.bachelor.yarn.Yarn;
@@ -43,22 +44,47 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
                 .collect(Collectors.toList());
     }
 
+    private String determineGloss(SynsetEntry synset) {
+        for (SynsetEntry.Word w : synset.getWord()) {
+            if (w == null || w.getRef() == null) {
+            } else {
+                for (SynsetEntry.Word.Definition def : w.getDefinition()) {
+                    if (StringUtils.isNotEmpty(def.getValue())) {
+                        return def.getValue();
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private POS determinePOS(SynsetEntry synset) {
+        for (SynsetEntry.Word word : synset.getWord()) {
+            if (word.getRef() != null) {
+                return YarnNodeRepository.getPOS((WordEntry) word.getRef());
+            }
+        }
+//                log.warn("Discrepancy in data: synset without a word: " + this);
+        return POS.NOUN;
+    }
+
     @Override
     protected SynsetNode<SynsetEntry, V> createNode(String id) {
         SynsetEntry synset = yarn.getSynset(id);
         if (synset == null) return null;
+        String gloss = determineGloss(synset);
+        Set<String> words = new HashSet<>();
+        for (SynsetEntry.Word w : synset.getWord()) {
+            if (w == null || w.getRef() == null) {
+            } else {
+                words.add(((WordEntry) w.getRef()).getWord());
+            }
+        }
+        POS pos = determinePOS(synset);
         return new SynsetNode<SynsetEntry, V>() {
             @Override
             public String getGloss() {
-                List<String> glosses = getGlosses();
-                return glosses.isEmpty() ? null : glosses.get(0);
-            }
-
-            @Override
-            public List<String> getGlosses() {
-                List<String> glosses = new ArrayList<>();
-                getWordsWithData().stream().forEach(w -> glosses.addAll(w.getGlosses()));
-                return glosses;
+                return gloss;
             }
 
             @Override
@@ -68,14 +94,6 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
 
             @Override
             public Set<String> getWords() {
-                Set<String> words = new HashSet<>();
-                for (SynsetEntry.Word w : synset.getWord()) {
-                    if (w == null || w.getRef() == null) {
-//                        log.warn("Discrepancy in data: {}", Yarn.toString(synset));
-                    } else {
-                        words.add(((WordEntry) w.getRef()).getWord());
-                    }
-                }
                 return words;
             }
 
@@ -89,7 +107,11 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
                         WordEntry we = (WordEntry) w.getRef();
                         WordData wordData = new WordData();
                         wordData.setLemma(we.getWord());
-                        wordData.setGlosses(w.getDefinition().stream().map(SynsetEntry.Word.Definition::getValue).collect(Collectors.toList()));
+                        wordData.setGlosses(w.getDefinition()
+                                .stream()
+                                .map(SynsetEntry.Word.Definition::getValue)
+                                .filter(StringUtils::isNotBlank)
+                                .collect(Collectors.toList()));
                         wordData.setExamples(w.getExample().stream().map(SynsetEntry.Word.Example::getValue).collect(Collectors.toList()));
                         words.add(wordData);
                     }
@@ -99,13 +121,7 @@ public class YarnNodeRepository<V> extends NodeRepository<SynsetEntry, V> {
 
             @Override
             public POS getPOS() {
-                for (SynsetEntry.Word word : synset.getWord()) {
-                    if (word.getRef() != null) {
-                        return YarnNodeRepository.getPOS((WordEntry) word.getRef());
-                    }
-                }
-//                log.warn("Discrepancy in data: synset without a word: " + this);
-                return POS.NOUN;
+                return pos;
             }
 
             @Override

@@ -8,10 +8,7 @@ import ru.georgeee.bachelor.yarn.core.SynsetNode;
 import ru.georgeee.bachelor.yarn.core.TranslationLink;
 import ru.georgeee.bachelor.yarn.core.WordData;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Cluster<T, V> extends SynsetNode<T, V> implements Comparable<Cluster<T, V>>, Iterable<Cluster.Member<T, V>> {
     private static final Logger log = LoggerFactory.getLogger(Clusterer.class);
@@ -41,7 +38,7 @@ public class Cluster<T, V> extends SynsetNode<T, V> implements Comparable<Cluste
 
     @Override
     public String getGloss() {
-        return members.first().getNode().getGloss();
+        return null;
     }
 
     @Override
@@ -82,20 +79,32 @@ public class Cluster<T, V> extends SynsetNode<T, V> implements Comparable<Cluste
                 '}';
     }
 
+    public Set<Member<T, V>> getUnderlyingNodes() {
+        return Collections.unmodifiableSet(members);
+    }
+
     @Getter
     public static class Member<T, V> implements Comparable<Member> {
         private final SynsetNode<T, V> node;
-        private final double weight;
-        private final double rWeight;
+        private final TranslationLink link;
+        private final TranslationLink rLink;
 
-        public Member(SynsetNode<T, V> node, double weight, double rWeight) {
+        public Member(SynsetNode<T, V> node, TranslationLink link, TranslationLink rLink) {
             this.node = node;
-            this.weight = weight;
-            this.rWeight = rWeight;
+            this.link = link;
+            this.rLink = rLink;
+        }
+
+        public double getRWeight() {
+            return rLink == null ? 0 : rLink.getWeight();
+        }
+
+        public double getWeight() {
+            return link == null ? 0 : link.getWeight();
         }
 
         public double getMWeight() {
-            return (weight + rWeight) / 2;
+            return (getWeight() + getRWeight()) / 2;
         }
 
         @Override

@@ -69,7 +69,7 @@ public class Application implements CommandLineRunner {
     @Value("${gv.out:out.dot}")
     private String graphvizOutFile;
 
-    @Value("${app.export.db:true}")
+    @Value("${app.export.db:false}")
     private boolean exportToDb;
 
     @Value("${idsFile:}")

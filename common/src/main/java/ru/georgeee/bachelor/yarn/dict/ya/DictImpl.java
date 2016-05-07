@@ -7,9 +7,7 @@ import ru.georgeee.bachelor.yarn.dict.Dict;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -31,7 +29,7 @@ public class DictImpl implements Dict, Closeable {
             return s.flatMap(def -> def.getTranslations()
                     .stream()
                     .map(tr -> {
-                        List<String> words = new ArrayList<>();
+                        Set<String> words = new LinkedHashSet<>();
                         words.add(tr.getText());
                         if (tr.getSynonyms() != null) {
                             tr.getSynonyms().stream().map(LookupResponse.Word::getText).forEach(words::add);

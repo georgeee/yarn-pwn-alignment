@@ -12,10 +12,10 @@ public class GraphVizSettings {
     @Value("${gv.engine:fdp}")
     private String engine;
 
-    @Value("${gv.threshold:0.01}")
+    @Value("${gv.threshold:0}")
     private double threshold;
 
-    @Value("${gv.mThreshold:0.01}")
+    @Value("${gv.mThreshold:0}")
     private double meanThreshold;
 
     @Value("${gv.maxEdges:0}")

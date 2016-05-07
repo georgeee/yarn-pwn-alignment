@@ -1,9 +1,9 @@
 package ru.georgeee.bachelor.yarn.alignment;
 
 
-import edu.mit.jwi.Dictionary;
 import edu.mit.jwi.IDictionary;
-import edu.mit.jwi.item.*;
+import edu.mit.jwi.item.ISynset;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -13,42 +13,33 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.jdbc.core.JdbcTemplate;
 import ru.georgeee.bachelor.yarn.Yarn;
-import ru.georgeee.bachelor.yarn.app.*;
-import ru.georgeee.bachelor.yarn.clustering.Cluster;
-import ru.georgeee.bachelor.yarn.clustering.Clusterer;
+import ru.georgeee.bachelor.yarn.app.MetricsParams;
+import ru.georgeee.bachelor.yarn.app.PWNNodeRepository;
+import ru.georgeee.bachelor.yarn.app.YarnNodeRepository;
+import ru.georgeee.bachelor.yarn.core.GraphSettings;
+import ru.georgeee.bachelor.yarn.core.GraphVizSettings;
+import ru.georgeee.bachelor.yarn.core.SynsetNode;
 import ru.georgeee.bachelor.yarn.dict.Dict;
-import ru.georgeee.bachelor.yarn.core.*;
 import ru.georgeee.bachelor.yarn.dict.StatTrackingDict;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 
-import javax.annotation.PostConstruct;
-import javax.xml.bind.JAXBException;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @SpringBootApplication(scanBasePackages = {"ru.georgeee.bachelor.yarn"})
 public class Application implements CommandLineRunner {
 
-    @Value("${pwn.home}")
-    private String pwnHomePath;
-
-    @Value("${yarn.xml}")
-    private String yarnXmlPath;
-
-    @Value("${gv.out:out.dot}")
-    private String graphvizOutFile;
-
     @Autowired
     private MetricsParams params;
-
-    @Autowired
-    private Metrics metrics;
 
     @Autowired
     @Qualifier("enRuDict")
@@ -58,7 +49,9 @@ public class Application implements CommandLineRunner {
     @Qualifier("ruEnDict")
     private Dict ruEnDict;
 
+    @Autowired
     private Yarn yarn;
+    @Autowired
     private IDictionary pwnDict;
 
     @Autowired
@@ -68,27 +61,84 @@ public class Application implements CommandLineRunner {
     private GraphVizSettings gvSettings;
 
     @Autowired
-    private Clusterer clusterer;
+    private Aligner aligner;
 
     @Autowired
     private ApplicationContext context;
 
+    @Value("${gv.out:out.dot}")
+    private String graphvizOutFile;
+
+    @Value("${app.export.db:true}")
+    private boolean exportToDb;
+
+    @Value("${idsFile:}")
+    private String idsFile;
+
+    @Autowired
+    private ExportService exportService;
+
+
     public static void main(String[] args) throws Exception {
-        //@TODO Next step: imageNet image downloader (separate app)
         SpringApplication application = new SpringApplication(Application.class);
         application.setApplicationContextClass(AnnotationConfigApplicationContext.class);
         SpringApplication.run(Application.class, args);
     }
 
-    @PostConstruct
-    private void init() throws IOException, JAXBException {
-        yarn = Yarn.create(Paths.get(yarnXmlPath));
-        pwnDict = new Dictionary(new URL("file", null, pwnHomePath));
-        pwnDict.open();
+    @Override
+    public void run(String... args) throws IOException {
+        if (StringUtils.isEmpty(idsFile)) {
+            interactive();
+        } else {
+            List<String> ids = Files.lines(Paths.get(idsFile))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotEmpty)
+                    .collect(Collectors.toList());
+            exportService.exportToDb(aligner.align(ids));
+        }
     }
 
-    @Override
-    public void run(String... args) throws IOException, JAXBException {
+    private void lookupSynset(String q) {
+        PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
+        YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
+        for (String s : q.split("\\s*,\\s*")) {
+            System.out.println(s);
+            SynsetNode<SynsetEntry, ISynset> yarnNode = yarnRepo.getNodeById(s);
+            SynsetNode<ISynset, SynsetEntry> pwnNode = pwnRepo.getNodeById(s);
+            System.out.println("\tYarn: " + yarnNode);
+            System.out.println("\tPWN: " + pwnNode);
+        }
+    }
+
+    private void updateSetting(String q) {
+        int index = q.indexOf('=');
+        if (index == -1) {
+            System.err.println("Wrong format");
+        } else {
+            String key = q.substring(0, index).trim();
+            String value = q.substring(index + 1).trim();
+            processParameter(key, value);
+        }
+    }
+
+    private void lookupWordTranslations(String q) {
+        for (String s : q.split("\\s*,\\s*")) {
+            System.out.println("EnRu: " + s + ":" + enRuDict.translate(s));
+            System.out.println("RuEn: " + s + ":" + ruEnDict.translate(s));
+        }
+    }
+
+    private void testAlign(String query) throws IOException {
+        Aligner.Result result = aligner.align(Arrays.asList(query.split("\\s*,\\s*")));
+        if (exportToDb) {
+            exportService.exportToDb(result);
+        }
+        if (StringUtils.isNotEmpty(graphvizOutFile)) {
+            exportService.exportToGraphViz(Paths.get(graphvizOutFile), result);
+        }
+    }
+
+    private void interactive() throws IOException {
         try (BufferedReader br = new BufferedReader(new InputStreamReader(System.in))) {
             String query;
             while ((query = br.readLine()) != null) {
@@ -98,36 +148,15 @@ public class Application implements CommandLineRunner {
                     String[] parts = query.substring(1).split("\\s+", 2);
                     String type = parts[0], q = parts.length == 2 ? parts[1].trim() : "";
                     switch (type) {
-                        case "w": {
-                            PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
-                            YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
-                            for (String s : q.split("\\s*,\\s*")) {
-                                System.out.println(s);
-                                SynsetNode<SynsetEntry, ISynset> yarnNode = yarnRepo.getNodeById(s);
-                                SynsetNode<ISynset, SynsetEntry> pwnNode = pwnRepo.getNodeById(s);
-                                System.out.println("\tYarn: " + yarnNode);
-                                System.out.println("\tPWN: " + pwnNode);
-                            }
+                        case "w":
+                            lookupSynset(q);
                             break;
-                        }
-                        case "s": {
-                            int index = q.indexOf('=');
-                            if (index == -1) {
-                                System.err.println("Wrong format");
-                            } else {
-                                String key = q.substring(0, index).trim();
-                                String value = q.substring(index + 1).trim();
-                                processParameter(key, value);
-                            }
+                        case "s":
+                            updateSetting(q);
                             break;
-                        }
-                        case "t": {
-                            for (String s : q.split("\\s*,\\s*")) {
-                                System.out.println("EnRu: " + s + ":" + enRuDict.translate(s));
-                                System.out.println("RuEn: " + s + ":" + ruEnDict.translate(s));
-                            }
+                        case "t":
+                            lookupWordTranslations(q);
                             break;
-                        }
                         case "ds": {
                             if (q.isEmpty()) {
                                 printDictStats(System.out);
@@ -142,52 +171,9 @@ public class Application implements CommandLineRunner {
                             System.err.println("Unknown query: " + query);
                     }
                 } else {
-                    PWNNodeRepository<SynsetEntry> pwnRepo = new PWNNodeRepository<>(pwnDict);
-                    YarnNodeRepository<ISynset> yarnRepo = new YarnNodeRepository<>(yarn);
-                    GraphTraverser traverser = new GraphTraverser();
-                    traverser.registerRepo(pwnRepo, (n, s) -> {
-                        metrics.processNode(s, enRuDict, yarnRepo, n);
-                        return null;
-                    });
-                    traverser.registerRepo(yarnRepo, (n, s) -> {
-                        metrics.processNode(s, ruEnDict, pwnRepo, n);
-                        return null;
-                    });
-                    for (String s : query.split("\\s*,\\s*")) {
-                        findNode(yarnRepo, s);
-                        findNode(pwnRepo, s);
-                    }
-                    traverser.traverse(grSettings);
-                    clusterer.clusterizeOutgoingEdges(pwnRepo);
-                    try (BufferedWriter bw = Files.newBufferedWriter(Paths.get(graphvizOutFile));
-                         GraphVizBuilder builder = new GraphVizBuilder(gvSettings, bw)) {
-                        builder.addIgnored(traverser.getRemained());
-                        builder.addRepo(pwnRepo);
-                        builder.addRepo(yarnRepo);
-                        printNodes(builder.getCreated());
-                    }
+                    testAlign(query);
                 }
             }
-        }
-    }
-
-    private void printNodes(Collection<? extends SynsetNode<?, ?>> created) {
-        TreeSet<SynsetNode<?, ?>> unrolled = new TreeSet<>((s1, s2) -> s1.getId().compareTo(s2.getId()));
-        created.stream().forEach(n -> unrollNode(n, unrolled));
-        unrolled.stream().forEach(System.out::println);
-    }
-
-    private void unrollCluster(Cluster<?, ?> cluster, Set<SynsetNode<?, ?>> unrolled) {
-        for (Cluster.Member<?, ?> n : cluster) {
-            unrollNode(n.getNode(), unrolled);
-        }
-    }
-
-    private void unrollNode(SynsetNode<?, ?> node, Set<SynsetNode<?, ?>> unrolled) {
-        if (node instanceof Cluster) {
-            unrollCluster((Cluster<?, ?>) node, unrolled);
-        } else {
-            unrolled.add(node);
         }
     }
 
@@ -204,14 +190,6 @@ public class Application implements CommandLineRunner {
         } else {
             out.append("  Stats turned off\n");
         }
-    }
-
-    private <T, V> List<SynsetNode<T, V>> findNode(NodeRepository<T, V> repo, String s) {
-        SynsetNode<T, V> node = repo.getNodeById(s);
-        if (node != null) {
-            return Collections.singletonList(node);
-        }
-        return repo.findNode(new Query(s, null));
     }
 
     private void processParameter(String key, String value) {

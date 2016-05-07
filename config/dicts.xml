@@ -4,7 +4,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans.xsd">
     <!-- remove primary later -->
-    <bean id="enwiktDS" class="org.apache.tomcat.jdbc.pool.DataSource" primary="true" destroy-method="close">
+    <bean id="enwiktDS" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
         <property name="testOnBorrow" value="true"/>
         <property name="validationQuery" value="SELECT 1"/>
         <property name="driverClassName" value="com.mysql.cj.jdbc.Driver"/>
@@ -76,7 +76,7 @@
                         </list>
                     </constructor-arg>
                 </bean>
-                <!--<ref bean="yaRuEn"/>-->
+                <ref bean="yaRuEn"/>
             </list>
         </constructor-arg>
     </bean>
@@ -91,7 +91,7 @@
                         </list>
                     </constructor-arg>
                 </bean>
-                <!--<ref bean="yaEnRu"/>-->
+                <ref bean="yaEnRu"/>
             </list>
         </constructor-arg>
     </bean>

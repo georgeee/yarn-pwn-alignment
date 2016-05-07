@@ -5,6 +5,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.config.ConnectionConfig;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -42,21 +43,25 @@ public class Application implements CommandLineRunner {
     private String inputFilePathString;
     @Value("${imagenet.imagesDir}")
     private String imagesDirPathString;
-    @Value("${imagenet.downloader.soTimeout:5000}")
+    @Value("${imagenet.downloader.soTimeout:1000}")
     private int soTimeout;
     @Value("${imagenet.mapping_30_31}")
     private String imagenetIdMappingPathString;
     @Value("${limit:15}")
     private int limit;
-    @Value("${imagenet.downloader.retryTimeout:8000}")
+    @Value("${imagenet.downloader.retryTimeout:1000}")
     private int retryTimeout;
-    @Value("${imagenet.downloader.threads:10}")
+    @Value("${imagenet.downloader.threads:8}")
     private int threadCount;
+    @Value("${imagenet.downloader.mainExecutorCount:2}")
+    private int mainExecutorCount;
 
     private Map<String, String> imagenetIdMapping;
     private Path imagesDirPath;
     private Path inputFilePath;
     private ScheduledExecutorService executorService;
+
+    private Queue<String> idQueue = new ConcurrentLinkedQueue<>();
 
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
@@ -74,19 +79,21 @@ public class Application implements CommandLineRunner {
         }
         imagenetIdMapping = Collections.unmodifiableMap(AppUtils.loadIdMapping(Paths.get(imagenetIdMappingPathString), true));
         PoolingHttpClientConnectionManager connManager = new PoolingHttpClientConnectionManager();
-        connManager.setMaxTotal(threadCount);
+        connManager.setMaxTotal(threadCount * 4);
         connManager.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(soTimeout).build());
         httpClient = HttpClientBuilder.create()
                 .setRedirectStrategy(new ImagenetDownloaderRedirectStrategy())
                 .setConnectionManager(connManager)
                 .build();
         executorService = Executors.newScheduledThreadPool(threadCount);
+        latch = new CountDownLatch(mainExecutorCount);
     }
 
-    @PreDestroy
-    private void close() throws IOException {
-        httpClient.close();
-    }
+    //    @PreDestroy
+//    private void close() throws IOException {
+//        httpClient.close();
+//    }
+    private CountDownLatch latch;
 
     @Override
     public void run(String... args) throws IOException {
@@ -94,30 +101,55 @@ public class Application implements CommandLineRunner {
                 .map(String::trim)
                 .filter(StringUtils::isNotEmpty)
                 .filter(imagenetIdMapping::containsKey)
-                .map(id -> executorService.submit(() -> processId(id)))
-                .collect(Collectors.toList());
+                .forEach(idQueue::add);
+
+        for (int i = 0; i < mainExecutorCount; ++i) {
+            executorService.submit(this::processIds);
+        }
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            log.warn("Main thread interrupted", e);
+        }
+        log.info("All url lists processed");
     }
 
-    private void processId(String id) {
-        log.info("Getting url list for {}", id);
-        String wn30Id = imagenetIdMapping.get(id);
-        List<String> urls;
-        try {
-            urls = getUrlList(wn30Id);
-        } catch (IOException | IllegalArgumentException e) {
-            log.warn("Error loading urls for id {} ({})", id, wn30Id, e);
-            executorService.schedule(() -> processId(id), retryTimeout, TimeUnit.MILLISECONDS);
-            return;
+    private void processIds() {
+        while (!idQueue.isEmpty()) {
+            String id;
+            try {
+                id = idQueue.remove();
+            } catch (NoSuchElementException e) {
+                break;
+            }
+            log.info("Getting url list for {}", id);
+            String wn30Id = imagenetIdMapping.get(id);
+            List<String> urls;
+            try {
+                urls = getUrlList(wn30Id);
+            } catch (IOException | IllegalArgumentException e) {
+                log.warn("Error loading urls for id {} ({})", id, wn30Id, e);
+                idQueue.add(id);
+                executorService.schedule(this::processIds, retryTimeout, TimeUnit.MILLISECONDS);
+                return;
+            }
+            try {
+                new ImageDownloader(id, urls).download();
+            } catch (Exception e) {
+                log.warn("Error processing id {}", id, e);
+            }
         }
-        try {
-            new ImageDownloader(id, urls).download();
-        } catch (IOException e) {
-            log.warn("Error processing id {}", id, e);
-        }
+        latch.countDown();
     }
 
     private boolean tryDownload(Path idImagesDirPath, String l) {
         log.info("Downloading {} to {}", l, idImagesDirPath);
+        boolean res = tryDownloadImpl(idImagesDirPath, l);
+        log.info("Downloading {} to {}: result {}", l, idImagesDirPath, res);
+        return res;
+    }
+
+    private boolean tryDownloadImpl(Path idImagesDirPath, String l) {
         String[] parts = l.trim().split("\\s+", 2);
         if (parts.length < 2) {
             return false;
@@ -129,22 +161,21 @@ public class Application implements CommandLineRunner {
         if (Files.exists(filePath)) {
             return true;
         }
-        CloseableHttpResponse response;
-        try {
-            HttpGet httpGet = new HttpGet(url);
-            response = httpClient.execute(httpGet);
+        HttpGet httpGet = new HttpGet(url);
+        try (CloseableHttpResponse response = httpClient.execute(httpGet)) {
+            int statusCode = response.getStatusLine().getStatusCode();
+            if (statusCode < 200 || statusCode >= 300) {
+                return false;
+            }
+            try (BufferedOutputStream bis = new BufferedOutputStream(new FileOutputStream(tmpFilePath.toFile()))) {
+                response.getEntity().writeTo(bis);
+            } catch (IOException e) {
+                log.error("Error saving {} to {}", url, tmpFilePath, e);
+                return false;
+            }
         } catch (IllegalArgumentException | IOException e) {
             log.debug("Error getting url {}", url, e);
             return false;
-        }
-        int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode < 200 || statusCode >= 300) {
-            return false;
-        }
-        try (BufferedOutputStream bis = new BufferedOutputStream(new FileOutputStream(tmpFilePath.toFile()))) {
-            response.getEntity().writeTo(bis);
-        } catch (IOException e) {
-            log.error("Error saving {} to {}", url, tmpFilePath, e);
         }
         try {
             Files.move(tmpFilePath, filePath);
@@ -199,13 +230,14 @@ public class Application implements CommandLineRunner {
                         int i2;
                         synchronized (monitor) {
                             i2 = urlsTaken++;
-                            if (i2 >= urlDescs.size()) {
-                                break;
-                            }
+                        }
+                        if (i2 >= urlDescs.size()) {
+                            break;
                         }
                         ud = urlDescs.get(i2);
                         success = tryDownload(idImagesDirPath, ud);
                     }
+                    log.debug("Download task for {}: exiting...", id);
                 });
             }
         }

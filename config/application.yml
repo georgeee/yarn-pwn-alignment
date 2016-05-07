@@ -4,7 +4,6 @@ yarn:
     xml: yarn/yarn.xml
 gv:
     out: out2.dot
-    maxEdges: 10
 gr:
     threshold: 0.2
     maxEdges: 25
@@ -18,17 +17,15 @@ app:
     dictXml: file://${user.dir}/config/dicts.xml
 
 spring:
-    datasource:
-        initialize: false
     jpa:
+        database: POSTGRESQL
         show-sql: true
         hibernate:
+          naming-strategy: org.hibernate.cfg.DefaultNamingStrategy
           ddl-auto: none
-          naming_strategy: org.hibernate.cfg.DefaultNamingStrategy
-        properties:
-          hibernate:
-            dialect: org.hibernate.dialect.MySQL5Dialect
-            hbm2ddl:
-              auto: none
-            temp:
-              use_jdbc_metadata_defaults: false
+    datasource:
+        initialize: false
+        platform: postgresql
+        url: jdbc:postgresql://localhost:5432/yarn_pwn_alignment
+        username: georgeee
+        password: krispo

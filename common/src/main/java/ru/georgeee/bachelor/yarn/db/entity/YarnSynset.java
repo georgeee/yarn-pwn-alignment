@@ -2,16 +2,22 @@ package ru.georgeee.bachelor.yarn.db.entity;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Where;
 
 import javax.persistence.*;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @DiscriminatorValue("YARN")
 @Getter
-@Setter
 public class YarnSynset extends Synset {
     @OneToMany(mappedBy = "yarnSynset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<TranslateEdge> translateEdges = new HashSet<>();
+    @Setter
+    private List<TranslateEdge> translateEdges = new ArrayList<>();
+
+    @OneToMany(mappedBy = "yarnSynset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OrderBy(value = "weight DESC")
+    @Where(clause = "masterEdgeId IS NULL")
+    private List<TranslateEdge> notMasteredTranslateEdges = new ArrayList<>();
 }

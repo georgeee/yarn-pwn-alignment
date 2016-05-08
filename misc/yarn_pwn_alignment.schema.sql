@@ -18,4 +18,52 @@ ALTER TABLE Translate_Edge ADD CONSTRAINT FK_Translate_Edge_YarnId FOREIGN KEY (
 ALTER TABLE Translate_Edge ADD CONSTRAINT UQ_Translate_Edge_Id UNIQUE (Id);
 ALTER TABLE Translate_Edge ADD CONSTRAINT FK_Translate_Edge_MasterEdgeId FOREIGN KEY (MasterEdgeId) REFERENCES Translate_Edge (Id);
 ALTER TABLE Translate_Edge ADD CONSTRAINT CH_Translate_Edge_Weight CHECK (Weight >= 0 AND Weight <= 1);
+CREATE INDEX ON Translate_Edge (Weight DESC);
+
 ALTER TABLE Synset ADD CONSTRAINT UQ_Synset_ExternalId UNIQUE (ExternalId);
+
+CREATE TABLE Synset_Image (
+  Id SERIAL NOT NULL PRIMARY KEY,
+  SynsetId INT NOT NULL,
+  Filename VARCHAR(255) NOT NULL,
+  Priority INT,
+  Source VARCHAR(20) NOT NULL
+);
+
+ALTER TABLE Synset_Image ADD CONSTRAINT UQ_Synset_Image_SynsetId_Filename UNIQUE (SynsetId, Filename);
+ALTER TABLE Synset_Image ADD CONSTRAINT FK_Synset_Image_SynsetId FOREIGN KEY (SynsetId) REFERENCES Synset (Id);
+
+CREATE TABLE CS_A_Pool (
+    Id SERIAL NOT NULL PRIMARY KEY,
+    PredecessorId INT,
+    Overlap INT NOT NULL,
+    Status VARCHAR(20) NOT NULL
+);
+
+CREATE TABLE CS_A_Task (
+    Id SERIAL NOT NULL PRIMARY KEY,
+    PwnId INT NOT NULL,
+    PoolId INT NOT NULL
+);
+
+CREATE TABLE CS_A_Task_Synset (
+    Id SERIAL NOT NULL PRIMARY KEY,
+    TaskId INT NOT NULL,
+    YarnId INT NOT NULL
+);
+
+CREATE TABLE CS_A_Result (
+    Id SERIAL NOT NULL PRIMARY KEY,
+    ExternalId VARCHAR(255),
+    Source VARCHAR(20) NOT NULL,
+    Worker VARCHAR(20),
+    SelectedId INT
+);
+
+ALTER TABLE CS_A_Pool ADD CONSTRAINT FK_CS_A_Pool_PredecessorId FOREIGN KEY (PredecessorId) REFERENCES CS_A_Pool (Id);
+ALTER TABLE CS_A_Task ADD CONSTRAINT FK_CS_A_Task_PwnId FOREIGN KEY (PwnId) REFERENCES Synset (Id);
+ALTER TABLE CS_A_Task ADD CONSTRAINT FK_CS_A_Task_PoolId FOREIGN KEY (PoolId) REFERENCES CS_A_Pool (Id);
+ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT FK_CS_A_Task_Synset_TaskId FOREIGN KEY (TaskId) REFERENCES CS_A_Task (Id);
+ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT FK_CS_A_Task_Synset_YarnId FOREIGN KEY (YarnId) REFERENCES Synset (Id);
+ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT UQ_CS_A_Task_Synset_TaskId_YarnId UNIQUE (TaskId, YarnId);
+ALTER TABLE CS_A_Result ADD CONSTRAINT FK_CS_A_Result_SelectedId FOREIGN KEY (SelectedId) REFERENCES CS_A_Task_Synset (Id);

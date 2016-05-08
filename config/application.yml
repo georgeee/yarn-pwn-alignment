@@ -16,6 +16,10 @@ imagenet:
 
 app:
     dictXml: file://${user.dir}/config/dicts.xml
+cs:
+  tasks:
+    a:
+      dir: croudsourcing/taskA
 spring:
     jpa:
         database: POSTGRESQL

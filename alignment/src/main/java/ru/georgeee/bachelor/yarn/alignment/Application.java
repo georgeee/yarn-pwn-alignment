@@ -4,6 +4,8 @@ package ru.georgeee.bachelor.yarn.alignment;
 import edu.mit.jwi.IDictionary;
 import edu.mit.jwi.item.ISynset;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -20,6 +22,11 @@ import ru.georgeee.bachelor.yarn.app.YarnNodeRepository;
 import ru.georgeee.bachelor.yarn.core.GraphSettings;
 import ru.georgeee.bachelor.yarn.core.GraphVizSettings;
 import ru.georgeee.bachelor.yarn.core.SynsetNode;
+import ru.georgeee.bachelor.yarn.croudsourcing.tasks.a.Generator;
+import ru.georgeee.bachelor.yarn.db.entity.PwnSynset;
+import ru.georgeee.bachelor.yarn.db.entity.Synset;
+import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Pool;
+import ru.georgeee.bachelor.yarn.db.repo.SynsetRepository;
 import ru.georgeee.bachelor.yarn.dict.Dict;
 import ru.georgeee.bachelor.yarn.dict.StatTrackingDict;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
@@ -30,7 +37,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,46 +47,41 @@ import java.util.stream.Collectors;
 @SpringBootApplication(scanBasePackages = {"ru.georgeee.bachelor.yarn"})
 public class Application implements CommandLineRunner {
 
+    private static final Logger log = LoggerFactory.getLogger(Application.class);
     @Autowired
     private MetricsParams params;
-
     @Autowired
     @Qualifier("enRuDict")
     private Dict enRuDict;
-
     @Autowired
     @Qualifier("ruEnDict")
     private Dict ruEnDict;
-
     @Autowired
     private Yarn yarn;
     @Autowired
     private IDictionary pwnDict;
-
     @Autowired
     private GraphSettings grSettings;
-
     @Autowired
     private GraphVizSettings gvSettings;
-
     @Autowired
     private Aligner aligner;
-
     @Autowired
     private ApplicationContext context;
-
     @Value("${gv.out:out.dot}")
     private String graphvizOutFile;
-
     @Value("${app.export.db:false}")
     private boolean exportToDb;
-
+    @Value("${action:}")
+    private String action;
     @Value("${idsFile:}")
     private String idsFile;
-
     @Autowired
     private ExportService exportService;
-
+    @Autowired
+    private Generator taskAGenerator;
+    @Autowired
+    private SynsetRepository synsetRepository;
 
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
@@ -85,17 +89,45 @@ public class Application implements CommandLineRunner {
         SpringApplication.run(Application.class, args);
     }
 
+    private List<String> parseIds() throws IOException {
+        return Files.lines(Paths.get(idsFile))
+                .map(String::trim)
+                .filter(StringUtils::isNotEmpty)
+                .collect(Collectors.toList());
+    }
+
     @Override
     public void run(String... args) throws IOException {
-        if (StringUtils.isEmpty(idsFile)) {
+        if (StringUtils.isEmpty(action)) {
             interactive();
         } else {
-            List<String> ids = Files.lines(Paths.get(idsFile))
-                    .map(String::trim)
-                    .filter(StringUtils::isNotEmpty)
-                    .collect(Collectors.toList());
-            exportService.exportToDb(aligner.align(ids));
+            switch (action) {
+                case "buildGraph":
+                case "bg": {
+                    exportService.exportToDb(aligner.align(parseIds()));
+                    break;
+                }
+                case "generateA":
+                case "genA": {
+                    Pool pool = taskAGenerator.generate(getIdsAsPwnSynsets(), null);
+                    log.info("Created pool #{}", pool.getId());
+                    Path tsvPath = taskAGenerator.exportToTsv(pool);
+                    log.info("Generated TSV file {}", tsvPath);
+                    break;
+                }
+            }
         }
+    }
+
+    private List<PwnSynset> getIdsAsPwnSynsets() throws IOException {
+        List<PwnSynset> pwnSynsets = new ArrayList<>();
+        for (String id : parseIds()) {
+            Synset s = synsetRepository.findByExternalId(id);
+            if (s instanceof PwnSynset) {
+                pwnSynsets.add((PwnSynset) s);
+            }
+        }
+        return pwnSynsets;
     }
 
     private void lookupSynset(String q) {

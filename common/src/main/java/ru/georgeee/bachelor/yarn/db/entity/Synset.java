@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
-import java.util.Set;
+import java.util.List;
 
 @Entity
 @Getter
@@ -17,8 +17,8 @@ public abstract class Synset extends BaseEntity {
     @Column(nullable = false)
     private String externalId;
 
-    public abstract Set<TranslateEdge> getTranslateEdges();
+    public abstract List<TranslateEdge> getTranslateEdges();
+    public abstract void setTranslateEdges(List<TranslateEdge> edges);
 
-    public abstract void setTranslateEdges(Set<TranslateEdge> edges);
-
+    public abstract List<TranslateEdge> getNotMasteredTranslateEdges();
 }

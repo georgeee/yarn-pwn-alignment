@@ -29,7 +29,13 @@ public abstract class SynsetNode<T, V> {
         return getId().hashCode();
     }
 
-    public abstract String getGloss();
+    public String getGloss() {
+        return null;
+    }
+
+    public List<String> getExamples(){
+        return Collections.emptyList();
+    }
 
     public abstract String getId();
 

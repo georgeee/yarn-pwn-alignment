@@ -37,11 +37,6 @@ public class Cluster<T, V> extends SynsetNode<T, V> implements Comparable<Cluste
     }
 
     @Override
-    public String getGloss() {
-        return null;
-    }
-
-    @Override
     public String getId() {
         return id;
     }

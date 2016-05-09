@@ -103,10 +103,24 @@ public class PWNNodeRepository<V> extends NodeRepository<ISynset, V> {
         Set<String> words = synset.getWords().stream()
                 .map(PWNNodeRepository::getPWNLemma).collect(Collectors.toSet());
         ru.georgeee.bachelor.yarn.core.POS pos = determinePos(synset.getPOS());
+        String[] glossParts = synset.getGloss().split("\\s*;\\s*");
+        List<String> examples = new ArrayList<>();
+        for (int i = 0; i < glossParts.length; ++i) {
+            String part = glossParts[i] = StringUtils.strip(glossParts[i], "\"; \t\r\n");
+            if (i > 0) {
+                examples.add(part);
+            }
+        }
+        String gloss = glossParts[0];
         return new SynsetNode<ISynset, V>() {
             @Override
             public String getGloss() {
-                return synset.getGloss();
+                return gloss;
+            }
+
+            @Override
+            public List<String> getExamples() {
+                return examples;
             }
 
             @Override

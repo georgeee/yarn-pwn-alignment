@@ -18,4 +18,6 @@ public class Settings {
     private int defaultOverlap;
     @Value("${cs.tasks.a.dir}")
     private String dir;
+    @Value("${cs.tasks.a.maxImages:4}")
+    private int maxImages;
 }

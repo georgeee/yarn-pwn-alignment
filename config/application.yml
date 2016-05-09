@@ -23,7 +23,7 @@ cs:
 spring:
     jpa:
         database: POSTGRESQL
-        show-sql: true
+        show-sql: false
         hibernate:
           naming-strategy: org.hibernate.cfg.DefaultNamingStrategy
           ddl-auto: none

@@ -1,0 +1,75 @@
+<html>
+  <head>
+    <script type="text/javascript" src="handlebars-v4.0.5.js" ></script>
+    <script type="text/javascript" src="jquery-2.2.3.min.js" ></script>
+    <script type="text/javascript" src="featherlight.min.js" ></script>
+    <link rel="stylesheet" type="text/css" href="task-markup.css">
+<style>
+.task {
+  border: 1px dotted;
+  display: inline-block;
+  margin: 5px;
+}
+</style>
+</head>
+<body>
+  <div>
+    <textarea id=result>
+      
+    </textarea>
+  </div>
+  <div id="main"></div>
+  <script type="text/javascript">
+    Handlebars.registerHelper('field', function(options){
+      console.log(options);
+      //return options.fn(this);
+      return new Handlebars.SafeString("<input type=\"" + options.hash.type + "\" name=\"" + options.hash.name + "\" value=\"" + options.hash.value + "\" />"
+        + "<span class=\"label\">" + options.hash.label + "</span>");
+    })
+    function getParameterByName(name, url) {
+      if (!url) url = window.location.href;
+      name = name.replace(/[\[\]]/g, "\\$&");
+      var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+      results = regex.exec(url);
+      if (!results) return null;
+      if (!results[2]) return '';
+      return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+    function modifyCtx(ctx){
+      return ctx.map(function(v){
+        var settings = v.settings;
+        settings.pwn.wordsStr = settings.pwn.words.join(", ");
+        settings.options.forEach(function(v){
+          v.wordsStr = v.words.join(", ");
+        })
+        settings.imageRoot="imagenet/";
+        console.log(v)
+        return v;
+      })
+    }
+    var res = {};
+    $.get("task-markup.hbs", function(template) {
+      var template2 = "{{#each this}}<div class=\"task\" taskId=\"{{taskId}}\">" + template + "</div>{{/each}}";
+      var ctxPath = getParameterByName('ctx');
+      $.get({ url: ctxPath, dataType: "json", success: function(ctx) {
+        $('#main').html(Handlebars.compile(template2)(modifyCtx(ctx)))
+        $('#main input').change(function(){
+          var $this = $(this);
+          var name = $this.attr('origName');
+          var taskId = $this.parents('.task').attr('taskId');
+          res[taskId] = res[taskId] || {};
+          res[taskId][name] = this.value;
+          $('#result').html(JSON.stringify(res))
+        })
+        $('#main input').each(function(){
+          var $this = $(this);
+          var taskId = $this.parents('.task').attr('taskId');
+          var name = $this.attr('name');
+          $this.attr('name', taskId + '_' + name);
+          $this.attr('origName', name);
+        })
+      }})
+    })
+  </script>
+</body>
+

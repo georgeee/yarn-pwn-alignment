@@ -23,10 +23,6 @@ import ru.georgeee.bachelor.yarn.core.GraphSettings;
 import ru.georgeee.bachelor.yarn.core.GraphVizSettings;
 import ru.georgeee.bachelor.yarn.core.SynsetNode;
 import ru.georgeee.bachelor.yarn.croudsourcing.tasks.a.Generator;
-import ru.georgeee.bachelor.yarn.db.entity.PwnSynset;
-import ru.georgeee.bachelor.yarn.db.entity.Synset;
-import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Pool;
-import ru.georgeee.bachelor.yarn.db.repo.SynsetRepository;
 import ru.georgeee.bachelor.yarn.dict.Dict;
 import ru.georgeee.bachelor.yarn.dict.StatTrackingDict;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
@@ -37,9 +33,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -80,8 +74,6 @@ public class Application implements CommandLineRunner {
     private ExportService exportService;
     @Autowired
     private Generator taskAGenerator;
-    @Autowired
-    private SynsetRepository synsetRepository;
 
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
@@ -109,25 +101,11 @@ public class Application implements CommandLineRunner {
                 }
                 case "generateA":
                 case "genA": {
-                    Pool pool = taskAGenerator.generate(getIdsAsPwnSynsets(), null);
-                    log.info("Created pool #{}", pool.getId());
-                    Path tsvPath = taskAGenerator.exportToTsv(pool);
-                    log.info("Generated TSV file {}", tsvPath);
+                    taskAGenerator.generateAndExportByIds(parseIds());
                     break;
                 }
             }
         }
-    }
-
-    private List<PwnSynset> getIdsAsPwnSynsets() throws IOException {
-        List<PwnSynset> pwnSynsets = new ArrayList<>();
-        for (String id : parseIds()) {
-            Synset s = synsetRepository.findByExternalId(id);
-            if (s instanceof PwnSynset) {
-                pwnSynsets.add((PwnSynset) s);
-            }
-        }
-        return pwnSynsets;
     }
 
     private void lookupSynset(String q) {

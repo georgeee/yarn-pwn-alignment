@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -21,4 +22,9 @@ public abstract class Synset extends BaseEntity {
     public abstract void setTranslateEdges(List<TranslateEdge> edges);
 
     public abstract List<TranslateEdge> getNotMasteredTranslateEdges();
+
+    //@TODO Order by priority, limit by :maxImages (session)
+    @OneToMany(mappedBy = "synset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Setter
+    private List<SynsetImage> images = new ArrayList<>();
 }

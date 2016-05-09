@@ -20,4 +20,5 @@ public class PwnSynset extends Synset {
     @OrderBy(value = "weight DESC")
     @Where(clause = "masterEdgeId IS NULL")
     private List<TranslateEdge> notMasteredTranslateEdges = new ArrayList<>();
+
 }

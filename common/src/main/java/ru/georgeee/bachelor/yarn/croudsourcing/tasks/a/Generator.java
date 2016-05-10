@@ -66,9 +66,7 @@ public class Generator {
 
     public Pool generate(List<PwnSynset> synsets, Pool predecessor) {
         Pool pool = new Pool();
-        pool.setOverlap(settings.getDefaultOverlap());
         pool.setPredecessor(predecessor);
-        pool.setStatus(Pool.Status.INCOMPLETE);
 
         for (PwnSynset pwnSynset : synsets) {
             List<TranslateEdge> edges = pwnSynset.getNotMasteredTranslateEdges();

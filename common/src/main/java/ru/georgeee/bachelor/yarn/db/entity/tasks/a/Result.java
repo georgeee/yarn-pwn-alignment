@@ -15,17 +15,21 @@ public class Result extends BaseEntity {
     @JoinColumn(name = "selectedId")
     private TaskSynset taskSynset;
 
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "taskId")
+    private Task task;
+
     @Basic
     private String worker;
 
     @Basic
-    private String extrenalId;
+    private String assignmentId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Source source;
 
     public enum Source {
-        TOLOKA
+        TOLOKA, MANUAL
     }
 }

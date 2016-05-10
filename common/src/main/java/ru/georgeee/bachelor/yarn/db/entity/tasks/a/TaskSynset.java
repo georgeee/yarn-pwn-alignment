@@ -7,6 +7,7 @@ import ru.georgeee.bachelor.yarn.db.entity.BaseEntity;
 import ru.georgeee.bachelor.yarn.db.entity.YarnSynset;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -19,14 +20,13 @@ public class TaskSynset extends BaseEntity {
     private Task task;
 
     @Setter
-    @ManyToOne(optional = false)
+    @ManyToOne
     @JoinColumn(name = "yarnId")
     private YarnSynset yarnSynset;
 
-    @Setter
-    @OneToMany(mappedBy = "taskSynset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private List<Result> results;
+    @OneToMany(mappedBy = "taskSynset", fetch = FetchType.LAZY)
+    private List<Result> results = new ArrayList<>();
 
-    @Formula("(SELECT COUNT(*) FROM CS_A_Result r WHERE r.taskSynsetId = id)")
+    @Formula("(SELECT COUNT(*) FROM CS_A_Result r WHERE r.selectedId = id)")
     private int resultCount;
 }

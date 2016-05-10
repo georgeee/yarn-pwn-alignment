@@ -6,8 +6,8 @@ gv:
     out: out2.dot
     threshold: 0.2
 gr:
-    threshold: 0.2
-    maxEdges: 25
+    threshold: 0.15
+    maxEdges: 0
     depth: 2
 
 imagenet:

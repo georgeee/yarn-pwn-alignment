@@ -14,8 +14,8 @@ public class Settings {
     private int dMax;
     @Value("${cs.tasks.a.nMax:15}")
     private int nMax;
-    @Value("${cs.tasks.a.defaultOverlap:5}")
-    private int defaultOverlap;
+    @Value("${cs.tasks.a.overlap:5}")
+    private int overlap;
     @Value("${cs.tasks.a.dir}")
     private String dir;
     @Value("${cs.tasks.a.maxImages:4}")

@@ -23,6 +23,8 @@ import ru.georgeee.bachelor.yarn.core.GraphSettings;
 import ru.georgeee.bachelor.yarn.core.GraphVizSettings;
 import ru.georgeee.bachelor.yarn.core.SynsetNode;
 import ru.georgeee.bachelor.yarn.croudsourcing.tasks.a.Generator;
+import ru.georgeee.bachelor.yarn.croudsourcing.tasks.a.Importer;
+import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Result;
 import ru.georgeee.bachelor.yarn.dict.Dict;
 import ru.georgeee.bachelor.yarn.dict.StatTrackingDict;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
@@ -66,14 +68,22 @@ public class Application implements CommandLineRunner {
     private String graphvizOutFile;
     @Value("${app.export.db:false}")
     private boolean exportToDb;
+
     @Value("${action:}")
     private String action;
-    @Value("${idsFile:}")
-    private String idsFile;
+    @Value("${file:}")
+    private String file;
+    @Value("${source:}")
+    private String source;
+    @Value("${author:}")
+    private String author;
+
     @Autowired
     private ExportService exportService;
     @Autowired
     private Generator taskAGenerator;
+    @Autowired
+    private Importer taskAImporter;
 
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
@@ -82,7 +92,7 @@ public class Application implements CommandLineRunner {
     }
 
     private List<String> parseIds() throws IOException {
-        return Files.lines(Paths.get(idsFile))
+        return Files.lines(Paths.get(file))
                 .map(String::trim)
                 .filter(StringUtils::isNotEmpty)
                 .collect(Collectors.toList());
@@ -102,6 +112,11 @@ public class Application implements CommandLineRunner {
                 case "generateA":
                 case "genA": {
                     taskAGenerator.generateAndExportByIds(parseIds());
+                    break;
+                }
+                case "importJson":
+                case "ij": {
+                    taskAImporter.importFromJson(Paths.get(file), Result.Source.valueOf(source.toUpperCase()), author);
                     break;
                 }
             }

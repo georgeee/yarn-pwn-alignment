@@ -36,8 +36,7 @@ ALTER TABLE Synset_Image ADD CONSTRAINT FK_Synset_Image_SynsetId FOREIGN KEY (Sy
 CREATE TABLE CS_A_Pool (
     Id SERIAL NOT NULL PRIMARY KEY,
     PredecessorId INT,
-    Overlap INT NOT NULL,
-    Status VARCHAR(20) NOT NULL
+    Completed BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE TABLE CS_A_Task (
@@ -54,9 +53,10 @@ CREATE TABLE CS_A_Task_Synset (
 
 CREATE TABLE CS_A_Result (
     Id SERIAL NOT NULL PRIMARY KEY,
-    ExternalId VARCHAR(255),
     Source VARCHAR(20) NOT NULL,
-    Worker VARCHAR(20),
+    Worker VARCHAR(130),
+    AssignmentId VARCHAR(130) NOT NULL,
+    TaskId INT NOT NULL,
     SelectedId INT
 );
 
@@ -67,3 +67,5 @@ ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT FK_CS_A_Task_Synset_TaskId FOREIGN K
 ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT FK_CS_A_Task_Synset_YarnId FOREIGN KEY (YarnId) REFERENCES Synset (Id);
 ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT UQ_CS_A_Task_Synset_TaskId_YarnId UNIQUE (TaskId, YarnId);
 ALTER TABLE CS_A_Result ADD CONSTRAINT FK_CS_A_Result_SelectedId FOREIGN KEY (SelectedId) REFERENCES CS_A_Task_Synset (Id);
+ALTER TABLE CS_A_Result ADD CONSTRAINT FK_CS_A_Result_TaskId FOREIGN KEY (TaskId) REFERENCES CS_A_Task (Id);
+CREATE INDEX IX_CS_A_Result_AssignmentId ON CS_A_Result (AssignmentId);

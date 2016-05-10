@@ -13,21 +13,14 @@ import java.util.List;
 @Getter
 @Setter
 public class Pool extends BaseEntity {
-    @Column(nullable = false)
-    private int overlap;
-
     @OneToOne
     @JoinColumn(name = "PredecessorId")
     private Pool predecessor;
 
     @Basic
-    @Enumerated(EnumType.STRING)
-    private Status status;
+    private boolean completed;
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
 
-    public enum Status {
-       INCOMPLETE, FAILED, OK, FINAL
-    }
 }

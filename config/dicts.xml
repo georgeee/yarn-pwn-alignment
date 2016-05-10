@@ -37,7 +37,7 @@
         </constructor-arg>
     </bean>
     <bean id="yaDictEngine" class="ru.georgeee.bachelor.yarn.dict.ya.YandexDictEngine">
-        <constructor-arg value="dict.1.1.20160323T065926Z.e566e6436dd96c39.330838c11d36aa78b54c1721cd796e0c14979083"/>
+      <constructor-arg value="dict.1.1.20160509T214120Z.859096b3fb621548.f6887cf13ab0344d100236351dc0e73cf1df4f85"/>
     </bean>
     <bean id="starEnRu" class="ru.georgeee.bachelor.yarn.dict.stardict.DictImpl">
         <constructor-arg value="dicts/stardict/enru-lingvo.idx"/>

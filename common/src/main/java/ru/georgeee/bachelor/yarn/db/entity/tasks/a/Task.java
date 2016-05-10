@@ -2,6 +2,7 @@ package ru.georgeee.bachelor.yarn.db.entity.tasks.a;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.Formula;
 import ru.georgeee.bachelor.yarn.db.entity.BaseEntity;
 import ru.georgeee.bachelor.yarn.db.entity.PwnSynset;
 
@@ -24,4 +25,10 @@ public class Task extends BaseEntity {
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TaskSynset> taskSynsets = new ArrayList<>();
+
+    @OneToMany(mappedBy = "task", fetch = FetchType.LAZY)
+    private List<Result> results = new ArrayList<>();
+
+    @Formula("(SELECT COUNT(*) FROM CS_A_Result r WHERE r.taskId = id)")
+    private int resultCount;
 }

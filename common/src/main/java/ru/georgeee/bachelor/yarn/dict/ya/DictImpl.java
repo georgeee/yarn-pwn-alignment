@@ -7,7 +7,10 @@ import ru.georgeee.bachelor.yarn.dict.Dict;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,7 +38,12 @@ public class DictImpl implements Dict, Closeable {
                             tr.getSynonyms().stream().map(LookupResponse.Word::getText).forEach(words::add);
                         }
                         POS pos = YandexDictEngine.determinePOS(tr.getPos());
-                        return new Translation(words, pos, null);
+                        String gloss = null;
+                        List<LookupResponse.Word> meanings = tr.getMeanings();
+                        if (meanings != null && !meanings.isEmpty()) {
+                            gloss = meanings.stream().map(LookupResponse.Word::getText).collect(Collectors.joining(", "));
+                        }
+                        return new Translation(words, pos, gloss);
                     }))
                     .collect(Collectors.toList());
         } catch (Exception e) {

@@ -51,21 +51,31 @@ CREATE TABLE CS_A_Task_Synset (
     YarnId INT NOT NULL
 );
 
-CREATE TABLE CS_A_Result (
-    Id SERIAL NOT NULL PRIMARY KEY,
-    Source VARCHAR(20) NOT NULL,
-    Worker VARCHAR(130),
-    AssignmentId VARCHAR(130) NOT NULL,
-    TaskId INT NOT NULL,
-    SelectedId INT
-);
-
 ALTER TABLE CS_A_Pool ADD CONSTRAINT FK_CS_A_Pool_PredecessorId FOREIGN KEY (PredecessorId) REFERENCES CS_A_Pool (Id);
 ALTER TABLE CS_A_Task ADD CONSTRAINT FK_CS_A_Task_PwnId FOREIGN KEY (PwnId) REFERENCES Synset (Id);
 ALTER TABLE CS_A_Task ADD CONSTRAINT FK_CS_A_Task_PoolId FOREIGN KEY (PoolId) REFERENCES CS_A_Pool (Id);
 ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT FK_CS_A_Task_Synset_TaskId FOREIGN KEY (TaskId) REFERENCES CS_A_Task (Id);
 ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT FK_CS_A_Task_Synset_YarnId FOREIGN KEY (YarnId) REFERENCES Synset (Id);
 ALTER TABLE CS_A_Task_Synset ADD CONSTRAINT UQ_CS_A_Task_Synset_TaskId_YarnId UNIQUE (TaskId, YarnId);
-ALTER TABLE CS_A_Result ADD CONSTRAINT FK_CS_A_Result_SelectedId FOREIGN KEY (SelectedId) REFERENCES CS_A_Task_Synset (Id);
-ALTER TABLE CS_A_Result ADD CONSTRAINT FK_CS_A_Result_TaskId FOREIGN KEY (TaskId) REFERENCES CS_A_Task (Id);
-CREATE INDEX IX_CS_A_Result_AssignmentId ON CS_A_Result (AssignmentId);
+
+CREATE TABLE CS_A_Worker (
+    Id SERIAL NOT NULL PRIMARY KEY,
+    Source VARCHAR(20) NOT NULL,
+    ExternalId VARCHAR(130) NOT NULL
+);
+
+CREATE TABLE CS_A_Answer (
+    Id SERIAL NOT NULL PRIMARY KEY,
+    WorkerId INT NOT NULL,
+    AssignmentId VARCHAR(130) NOT NULL,
+    TaskId INT NOT NULL,
+    SelectedId INT,
+    CreatedDate DATE NOT NULL
+);
+
+ALTER TABLE CS_A_Answer ADD CONSTRAINT FK_CS_A_Answer_SelectedId FOREIGN KEY (SelectedId) REFERENCES CS_A_Task_Synset (Id);
+ALTER TABLE CS_A_Answer ADD CONSTRAINT FK_CS_A_Answer_TaskId FOREIGN KEY (TaskId) REFERENCES CS_A_Task (Id);
+ALTER TABLE CS_A_Answer ADD CONSTRAINT FK_CS_A_Answer_WorkerId FOREIGN KEY (WorkerId) REFERENCES CS_A_Worker (Id);
+CREATE INDEX IX_CS_A_Answer_AssignmentId ON CS_A_Answer (AssignmentId);
+ALTER TABLE CS_A_Worker ADD CONSTRAINT UQ_CS_A_Worker_Source_ExternalId UNIQUE (Source, ExternalId);
+

@@ -6,9 +6,10 @@ import org.hibernate.annotations.Formula;
 import ru.georgeee.bachelor.yarn.db.entity.BaseEntity;
 import ru.georgeee.bachelor.yarn.db.entity.YarnSynset;
 
-import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
+import javax.persistence.Entity;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
 
 @Entity
 @Table(name = "CS_A_Task_Synset")
@@ -24,9 +25,6 @@ public class TaskSynset extends BaseEntity {
     @JoinColumn(name = "yarnId")
     private YarnSynset yarnSynset;
 
-    @OneToMany(mappedBy = "taskSynset", fetch = FetchType.LAZY)
-    private List<Result> results = new ArrayList<>();
-
-    @Formula("(SELECT COUNT(*) FROM CS_A_Result r WHERE r.selectedId = id)")
+    @Formula("(SELECT COUNT(*) FROM CS_A_Answer r WHERE r.selectedId = id)")
     private int resultCount;
 }

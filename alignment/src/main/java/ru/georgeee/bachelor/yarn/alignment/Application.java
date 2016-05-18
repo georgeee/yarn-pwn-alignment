@@ -24,7 +24,8 @@ import ru.georgeee.bachelor.yarn.core.GraphVizSettings;
 import ru.georgeee.bachelor.yarn.core.SynsetNode;
 import ru.georgeee.bachelor.yarn.croudsourcing.tasks.a.Generator;
 import ru.georgeee.bachelor.yarn.croudsourcing.tasks.a.Importer;
-import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Result;
+import ru.georgeee.bachelor.yarn.croudsourcing.tasks.a.MTsar;
+import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Worker;
 import ru.georgeee.bachelor.yarn.dict.Dict;
 import ru.georgeee.bachelor.yarn.dict.StatTrackingDict;
 import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
@@ -77,6 +78,8 @@ public class Application implements CommandLineRunner {
     private String source;
     @Value("${author:}")
     private String author;
+    @Value("${poolId:0}")
+    private int poolId;
 
     @Autowired
     private ExportService exportService;
@@ -84,6 +87,8 @@ public class Application implements CommandLineRunner {
     private Generator taskAGenerator;
     @Autowired
     private Importer taskAImporter;
+    @Autowired
+    private MTsar taskAMTsar;
 
     public static void main(String[] args) throws Exception {
         SpringApplication application = new SpringApplication(Application.class);
@@ -114,9 +119,19 @@ public class Application implements CommandLineRunner {
                     taskAGenerator.generateAndExportByIds(parseIds());
                     break;
                 }
-                case "importJson":
-                case "ij": {
-                    taskAImporter.importFromJson(Paths.get(file), Result.Source.valueOf(source.toUpperCase()), author);
+                case "answersJson":
+                case "aj": {
+                    taskAImporter.importAnswersFromJson(Paths.get(file), Worker.Source.valueOf(source.toUpperCase()), author);
+                    break;
+                }
+                case "answersToloka":
+                case "at": {
+                    taskAImporter.importAnswersFromToloka(Paths.get(file));
+                    break;
+                }
+                case "exportMTsar":
+                case "em": {
+                    taskAMTsar.exportToMTsar(poolId);
                     break;
                 }
             }

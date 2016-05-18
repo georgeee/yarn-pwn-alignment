@@ -2,28 +2,19 @@ package ru.georgeee.bachelor.yarn.db.entity.tasks.a;
 
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 import ru.georgeee.bachelor.yarn.db.entity.BaseEntity;
 
 import javax.persistence.*;
 
 @Entity
-@Table(name = "CS_A_Result")
+@Table(name = "CS_A_Worker")
 @Getter
 @Setter
-public class Result extends BaseEntity {
-    @ManyToOne
-    @JoinColumn(name = "selectedId")
-    private TaskSynset taskSynset;
-
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "taskId")
-    private Task task;
-
-    @Basic
-    private String worker;
-
-    @Basic
-    private String assignmentId;
+@ToString
+public class Worker extends BaseEntity{
+    @Column(nullable = false)
+    private String externalId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
@@ -32,4 +23,5 @@ public class Result extends BaseEntity {
     public enum Source {
         TOLOKA, MANUAL
     }
+
 }

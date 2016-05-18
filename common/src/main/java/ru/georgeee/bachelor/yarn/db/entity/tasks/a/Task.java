@@ -15,7 +15,7 @@ import java.util.List;
 @Getter
 @Setter
 public class Task extends BaseEntity {
-    @ManyToOne(optional = false)
+    @ManyToOne(optional = false, fetch = FetchType.EAGER)
     @JoinColumn(name = "pwnId")
     private PwnSynset pwnSynset;
 
@@ -26,9 +26,9 @@ public class Task extends BaseEntity {
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TaskSynset> taskSynsets = new ArrayList<>();
 
-    @OneToMany(mappedBy = "task", fetch = FetchType.LAZY)
-    private List<Result> results = new ArrayList<>();
+    @OneToMany(fetch = FetchType.LAZY, mappedBy = "task")
+    private List<Answer> answers = new ArrayList<>();
 
-    @Formula("(SELECT COUNT(*) FROM CS_A_Result r WHERE r.taskId = id)")
+    @Formula("(SELECT COUNT(*) FROM CS_A_Answer r WHERE r.taskId = id)")
     private int resultCount;
 }

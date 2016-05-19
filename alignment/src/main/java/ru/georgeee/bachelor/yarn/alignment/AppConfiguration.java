@@ -19,7 +19,7 @@ import java.net.URL;
 import java.nio.file.Paths;
 
 @Configuration
-@ImportResource({"${app.dictXml}"})
+@ImportResource({"${app.dictsXml}", "${app.alignmentStagesXml}"})
 public class AppConfiguration {
 
     @Autowired

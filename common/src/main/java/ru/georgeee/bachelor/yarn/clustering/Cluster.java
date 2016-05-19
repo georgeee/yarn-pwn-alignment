@@ -30,10 +30,9 @@ public class Cluster<T, V> extends SynsetNode<T, V> implements Comparable<Cluste
     }
 
     public void addMember(Member<T, V> member) {
-//        log.debug("addMember: {} (to {})", member.getNode().getId(), getId());
         members.add(member);
-//        log.debug("  members: {} (of {})", members, getId());
-        reportBackEdgeWeight(member.getNode().getMaxBackEdgeWeight());
+        setMaxBackEdgeWeight(Math.max(getMaxBackEdgeWeight(), member.getNode().getMaxBackEdgeWeight()));
+        setBackEdgeCount(getBackEdgeCount() + member.getNode().getBackEdgeCount());
     }
 
     @Override

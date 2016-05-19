@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans.xsd">
+    <bean id="alignmentStages" class="ru.georgeee.bachelor.yarn.alignment.misc.StageList">
+        <constructor-arg>
+            <list>
+                <bean class="ru.georgeee.bachelor.yarn.alignment.Stage">
+                    <property name="directDict" ref="enRuDictLight"/>
+                    <property name="reverseDict" ref="ruEnDictLight"/>
+                    <property name="settings">
+                        <bean class="ru.georgeee.bachelor.yarn.core.TraverseSettings">
+                            <property name="threshold" value="0.2"/>
+                        </bean>
+                    </property>
+                </bean>
+                <bean class="ru.georgeee.bachelor.yarn.alignment.Stage">
+                    <property name="directDict" ref="enRuDictFull"/>
+                    <property name="reverseDict" ref="ruEnDictFull"/>
+                    <property name="settings">
+                        <bean class="ru.georgeee.bachelor.yarn.core.TraverseSettings">
+                            <property name="threshold" value="0.2"/>
+                            <property name="maxEdges" value="30"/>
+                        </bean>
+                    </property>
+                </bean>
+                <bean class="ru.georgeee.bachelor.yarn.alignment.Stage">
+                    <property name="directDict" ref="enRuDictFull"/>
+                    <property name="reverseDict" ref="ruEnDictFull"/>
+                    <property name="settings">
+                        <bean class="ru.georgeee.bachelor.yarn.core.TraverseSettings">
+                            <property name="meanThreshold" value="0.05"/>
+                            <property name="maxEdges" value="30"/>
+                        </bean>
+                    </property>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+</beans>

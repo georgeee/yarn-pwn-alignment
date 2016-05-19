@@ -1,14 +1,17 @@
 package ru.georgeee.bachelor.yarn.core;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.*;
 
 public abstract class SynsetNode<T, V> {
     @Getter
     private final Map<SynsetNode<V, T>, TranslationLink> edges = new HashMap<>();
-    @Getter
+    @Getter @Setter
     private double maxBackEdgeWeight;
+    @Getter @Setter
+    private int backEdgeCount;
 
     @Override
     public boolean equals(Object o) {
@@ -18,10 +21,11 @@ public abstract class SynsetNode<T, V> {
         return Objects.equals(getId(), that.getId());
     }
 
-    public void reportBackEdgeWeight(double weight) {
+    public void reportBackEdge(double weight) {
         if (maxBackEdgeWeight < weight) {
             maxBackEdgeWeight = weight;
         }
+        backEdgeCount++;
     }
 
     @Override

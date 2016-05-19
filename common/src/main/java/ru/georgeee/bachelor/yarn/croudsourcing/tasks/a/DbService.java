@@ -14,7 +14,7 @@ import ru.georgeee.bachelor.yarn.db.repo.tasks.a.TaskSynsetRepository;
 import ru.georgeee.bachelor.yarn.db.repo.tasks.a.WorkerRepository;
 
 
-@Component
+@Component("taskA_DbService")
 class DbService {
 
     @Autowired

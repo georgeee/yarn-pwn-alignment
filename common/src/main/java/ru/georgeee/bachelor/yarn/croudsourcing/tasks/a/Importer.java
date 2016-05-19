@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.supercsv.io.CsvMapReader;
 import org.supercsv.prefs.CsvPreference;
-import ru.georgeee.bachelor.yarn.croudsourcing.tasks.ImportUtils;
+import ru.georgeee.bachelor.yarn.croudsourcing.tasks.TaskUtils;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Answer;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Worker;
 import ru.georgeee.bachelor.yarn.db.repo.tasks.a.AnswerRepository;
@@ -24,7 +24,7 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-@Component
+@Component("taskA_Importer")
 public class Importer {
     private static final Logger log = LoggerFactory.getLogger(Importer.class);
     private static final String TOLOKA_TSV_ASSIGNMENT_ID = "ASSIGNMENT:assignment_id";
@@ -119,7 +119,7 @@ public class Importer {
     public void importAnswersFromJson(Path jsonPath, Worker.Source source, String workerId) throws IOException {
         String assignmentId = UUID.randomUUID().toString();
         Worker worker = dbService.getOrCreateWorker(source, workerId);
-        Map<Integer, JsonAnswer> answers = ImportUtils.importFromJson(jsonPath, JsonAnswer.class);
+        Map<Integer, JsonAnswer> answers = TaskUtils.importFromJson(jsonPath, JsonAnswer.class);
         answers.entrySet().forEach(e -> {
             Answer answer = new Answer();
             Integer selectedId = e.getValue().selectedId;

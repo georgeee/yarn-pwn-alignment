@@ -17,7 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Component
+@Component("taskA_MTsar")
 public class MTsar {
     private static final Logger log = LoggerFactory.getLogger(MTsar.class);
     private static final String MTSAR_TASK_TYPE_SINGLE = "single";

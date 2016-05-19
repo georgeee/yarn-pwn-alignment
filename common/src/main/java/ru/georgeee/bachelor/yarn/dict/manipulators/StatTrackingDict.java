@@ -1,7 +1,6 @@
-package ru.georgeee.bachelor.yarn.dict;
+package ru.georgeee.bachelor.yarn.dict.manipulators;
 
 import ru.georgeee.bachelor.yarn.dict.Dict;
-import ru.georgeee.bachelor.yarn.core.POS;
 
 import java.io.IOException;
 import java.util.HashSet;

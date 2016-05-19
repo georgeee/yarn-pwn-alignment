@@ -3,7 +3,6 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans.xsd">
-    <!-- remove primary later -->
     <bean id="enwiktDS" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
         <property name="testOnBorrow" value="true"/>
         <property name="validationQuery" value="SELECT 1"/>
@@ -37,7 +36,7 @@
         </constructor-arg>
     </bean>
     <bean id="yaDictEngine" class="ru.georgeee.bachelor.yarn.dict.ya.YandexDictEngine">
-      <constructor-arg value="dict.1.1.20160509T214120Z.859096b3fb621548.f6887cf13ab0344d100236351dc0e73cf1df4f85"/>
+        <constructor-arg value="dict.1.1.20160509T214120Z.859096b3fb621548.f6887cf13ab0344d100236351dc0e73cf1df4f85"/>
     </bean>
     <bean id="starEnRu" class="ru.georgeee.bachelor.yarn.dict.stardict.DictImpl">
         <constructor-arg value="dicts/stardict/enru-lingvo.idx"/>
@@ -65,7 +64,7 @@
         <constructor-arg ref="yaDictEngine"/>
         <constructor-arg value="en-ru"/>
     </bean>
-    <bean id="ruEnDict" class="ru.georgeee.bachelor.yarn.dict.manipulators.OneOf">
+    <bean id="ruEnDictLight" class="ru.georgeee.bachelor.yarn.dict.manipulators.OneOf">
         <constructor-arg>
             <list>
                 <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.MergeAll">
@@ -73,14 +72,22 @@
                         <list>
                             <ref bean="wiktRuEn"/>
                             <ref bean="starRuEn"/>
+                            <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.CachingDict">
+                                <property name="dictKey" value="yaRuEn"/>
+                                <property name="dict" ref="yaRuEn"/>
+                                <property name="cacheOnly" value="true"/>
+                            </bean>
                         </list>
                     </constructor-arg>
                 </bean>
-                <ref bean="yaRuEn"/>
+                <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.CachingDict">
+                    <property name="dictKey" value="yaRuEn"/>
+                    <property name="dict" ref="yaRuEn"/>
+                </bean>
             </list>
         </constructor-arg>
     </bean>
-    <bean id="enRuDict" class="ru.georgeee.bachelor.yarn.dict.manipulators.OneOf">
+    <bean id="enRuDictLight" class="ru.georgeee.bachelor.yarn.dict.manipulators.OneOf">
         <constructor-arg>
             <list>
                 <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.MergeAll">
@@ -88,11 +95,53 @@
                         <list>
                             <ref bean="wiktEnRu"/>
                             <ref bean="starEnRu"/>
+                            <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.CachingDict">
+                                <property name="dictKey" value="yaEnRu"/>
+                                <property name="dict" ref="yaEnRu"/>
+                                <property name="cacheOnly" value="true"/>
+                            </bean>
                         </list>
                     </constructor-arg>
                 </bean>
-                <ref bean="yaEnRu"/>
+                <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.CachingDict">
+                    <property name="dictKey" value="yaEnRu"/>
+                    <property name="dict" ref="yaEnRu"/>
+                </bean>
             </list>
+        </constructor-arg>
+    </bean>
+    <bean id="ruEnDictFull" class="ru.georgeee.bachelor.yarn.dict.manipulators.MergeAll">
+        <constructor-arg>
+            <list>
+                <ref bean="wiktRuEn"/>
+                <ref bean="starRuEn"/>
+                <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.CachingDict">
+                    <property name="dictKey" value="yaRuEn"/>
+                    <property name="dict" ref="yaRuEn"/>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+    <bean id="enRuDictFull" class="ru.georgeee.bachelor.yarn.dict.manipulators.MergeAll">
+        <constructor-arg>
+            <list>
+                <ref bean="wiktEnRu"/>
+                <ref bean="starEnRu"/>
+                <bean class="ru.georgeee.bachelor.yarn.dict.manipulators.CachingDict">
+                    <property name="dictKey" value="yaEnRu"/>
+                    <property name="dict" ref="yaEnRu"/>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+    <bean id="appInteractiveDicts" class="ru.georgeee.bachelor.yarn.alignment.misc.InteractiveDictsMap">
+        <constructor-arg>
+            <map>
+                <entry key="enRuDictLight" value-ref="enRuDictLight"/>
+                <entry key="ruEnDictLight" value-ref="ruEnDictLight"/>
+                <entry key="enRuDictFull" value-ref="enRuDictFull"/>
+                <entry key="ruEnDictFull" value-ref="ruEnDictFull"/>
+            </map>
         </constructor-arg>
     </bean>
 </beans>

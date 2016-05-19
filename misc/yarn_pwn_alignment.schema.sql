@@ -79,3 +79,12 @@ ALTER TABLE CS_A_Answer ADD CONSTRAINT FK_CS_A_Answer_WorkerId FOREIGN KEY (Work
 CREATE INDEX IX_CS_A_Answer_AssignmentId ON CS_A_Answer (AssignmentId);
 ALTER TABLE CS_A_Worker ADD CONSTRAINT UQ_CS_A_Worker_Source_ExternalId UNIQUE (Source, ExternalId);
 
+
+CREATE TABLE Dict_Cache (
+    Id SERIAL NOT NULL PRIMARY KEY,
+    DictKey VARCHAR(255) NOT NULL,
+    Word VARCHAR(255) NOT NULL,
+    Data BYTEA NOT NULL
+);
+ALTER TABLE Dict_Cache ADD CONSTRAINT UQ_Dict_Cache_DictKey_Word UNIQUE (DictKey, Word);
+

@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.georgeee.bachelor.yarn.core.*;
 import ru.georgeee.bachelor.yarn.dict.Dict;
-import ru.georgeee.bachelor.yarn.dict.StatTrackingDict;
+import ru.georgeee.bachelor.yarn.dict.manipulators.StatTrackingDict;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
@@ -30,7 +30,7 @@ public class Metrics {
         p1C = 1 / p1ND.density(params.getP1Mean());
     }
 
-    public <T, V> void processNode(GraphSettings grSettings, Dict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
+    public <T, V> void processNode(TraverseSettings grSettings, Dict dict, NodeRepository<V, T> repo, SynsetNode<T, V> node) {
         Map<SynsetNode<V, T>, TranslationLink> links = new HashMap<>();
         Map<SynsetNode<V, T>, Integer> linkCounts = new HashMap<>();
         for (WordData wordData : node.getWordsWithData()) {
@@ -78,7 +78,7 @@ public class Metrics {
                     .limit(grSettings.getMaxEdges());
         }
         stream.forEach(e -> {
-            e.getKey().reportBackEdgeWeight(e.getValue().getWeight());
+            e.getKey().reportBackEdge(e.getValue().getWeight());
             node.getEdges().put(e.getKey(), e.getValue());
         });
         if (log.isDebugEnabled()) {

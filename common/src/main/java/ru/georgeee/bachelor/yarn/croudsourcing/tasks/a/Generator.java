@@ -2,8 +2,7 @@ package ru.georgeee.bachelor.yarn.croudsourcing.tasks.a;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import edu.mit.jwi.IDictionary;
-import edu.mit.jwi.item.ISynset;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,20 +10,16 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.supercsv.io.CsvListWriter;
 import org.supercsv.prefs.CsvPreference;
-import ru.georgeee.bachelor.yarn.Yarn;
-import ru.georgeee.bachelor.yarn.app.PWNNodeRepository;
-import ru.georgeee.bachelor.yarn.app.YarnNodeRepository;
-import ru.georgeee.bachelor.yarn.core.SynsetNode;
+import ru.georgeee.bachelor.yarn.croudsourcing.tasks.PwnOptionMapping;
+import ru.georgeee.bachelor.yarn.croudsourcing.tasks.TaskUtils;
 import ru.georgeee.bachelor.yarn.db.entity.PwnSynset;
 import ru.georgeee.bachelor.yarn.db.entity.Synset;
 import ru.georgeee.bachelor.yarn.db.entity.TranslateEdge;
-import ru.georgeee.bachelor.yarn.db.entity.YarnSynset;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Pool;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Task;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.TaskSynset;
 import ru.georgeee.bachelor.yarn.db.repo.SynsetRepository;
 import ru.georgeee.bachelor.yarn.db.repo.tasks.a.PoolRepository;
-import ru.georgeee.bachelor.yarn.xml.SynsetEntry;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -32,10 +27,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
-@Component
+@Component("taskA_Generator")
 public class Generator {
     private static final String INPUT_TSV_FILENAME = "input.tsv";
     private static final String INPUT_JSON_FILENAME = "input.json";
@@ -46,9 +40,7 @@ public class Generator {
     @Autowired
     private Settings settings;
     @Autowired
-    private Yarn yarn;
-    @Autowired
-    private IDictionary pwnDict;
+    private TaskUtils taskUtils;
     @Autowired
     private SynsetRepository synsetRepository;
 
@@ -105,55 +97,24 @@ public class Generator {
         try (CsvListWriter out = new CsvListWriter(Files.newBufferedWriter(tsvPath), CsvPreference.TAB_PREFERENCE)) {
             out.writeHeader("INPUT:pwnId", "INPUT:taskId", "INPUT:settings");
             for (Task task : pool.getTasks()) {
-                TsvSettings tsvSettings = createTsvSettings(task);
-                out.write(task.getPwnSynset().getExternalId(), task.getId(), gson.toJson(tsvSettings));
+                PwnOptionMapping optionMapping = taskUtils.createPwnOptionMapping(task.getPwnSynset(),
+                        task.getTaskSynsets().stream().map(ts -> new ImmutablePair<>(ts.getId(), ts.getYarnSynset())),
+                        settings.getMaxImages());
+                out.write(task.getPwnSynset().getExternalId(), task.getId(), gson.toJson(optionMapping));
                 TaskConfig taskConfig = new TaskConfig();
                 taskConfig.pwnId = task.getPwnSynset().getExternalId();
                 taskConfig.taskId = task.getId();
-                taskConfig.settings = tsvSettings;
+                taskConfig.settings = optionMapping;
                 taskConfigs.add(taskConfig);
             }
         }
         log.info("Generated TSV file {}", tsvPath);
         Path jsonPath = poolDir.resolve(INPUT_JSON_FILENAME);
-        try(BufferedWriter bw = Files.newBufferedWriter(jsonPath)){
+        try (BufferedWriter bw = Files.newBufferedWriter(jsonPath)) {
             gson.toJson(taskConfigs, bw);
         }
         log.info("Generated JSON file {}", jsonPath);
         return tsvPath;
-    }
-
-    private TsvSettings createTsvSettings(Task task) {
-        PwnSynset pwnSynset = task.getPwnSynset();
-        PWNNodeRepository<?> pwnRepo = new PWNNodeRepository<>(pwnDict);
-        YarnNodeRepository<?> yarnRepo = new YarnNodeRepository<>(yarn);
-        TsvSettings res = new TsvSettings();
-        SynsetNode<ISynset, ?> pwnNode = pwnRepo.getNodeById(pwnSynset.getExternalId());
-        if (pwnNode == null) {
-            throw new IllegalStateException("Pwn node not found by id " + pwnSynset.getExternalId());
-        }
-        res.pwn = new TsvSettings.Pwn();
-        res.pwn.gloss = pwnNode.getGloss();
-        res.pwn.examples = pwnNode.getExamples();
-        res.pwn.words = pwnNode.getWords();
-        res.options = new ArrayList<>();
-        for (TaskSynset ts : task.getTaskSynsets()) {
-            YarnSynset yarnSynset = ts.getYarnSynset();
-            SynsetNode<SynsetEntry, ?> yarnNode = yarnRepo.getNodeById(yarnSynset.getExternalId());
-            if (yarnNode == null) {
-                throw new IllegalStateException("Pwn node not found by id " + yarnSynset.getExternalId());
-            }
-            TsvSettings.Option option = new TsvSettings.Option();
-            option.id = ts.getId();
-            option.words = yarnNode.getWords();
-            res.options.add(option);
-        }
-        int imageCnt = Math.min(pwnSynset.getImages().size(), settings.getMaxImages());
-        res.pwn.images = new ArrayList<>();
-        for (int i = 0; i < imageCnt; ++i) {
-            res.pwn.images.add(pwnSynset.getImages().get(i).getFilename());
-        }
-        return res;
     }
 
     @Transactional
@@ -164,25 +125,9 @@ public class Generator {
     }
 
     private static class TaskConfig {
-        TsvSettings settings;
+        PwnOptionMapping settings;
         String pwnId;
         int taskId;
     }
 
-    private static class TsvSettings {
-        Pwn pwn;
-        List<Option> options;
-
-        static class Pwn {
-            String gloss;
-            Collection<String> examples;
-            Collection<String> words;
-            List<String> images;
-        }
-
-        static class Option {
-            Collection<String> words;
-            int id;
-        }
-    }
 }

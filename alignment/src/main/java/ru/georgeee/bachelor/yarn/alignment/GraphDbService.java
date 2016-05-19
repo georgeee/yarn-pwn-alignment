@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import ru.georgeee.bachelor.yarn.clustering.Cluster;
-import ru.georgeee.bachelor.yarn.core.GraphSettings;
+import ru.georgeee.bachelor.yarn.core.TraverseSettings;
 import ru.georgeee.bachelor.yarn.core.SynsetNode;
 import ru.georgeee.bachelor.yarn.core.TranslationLink;
 import ru.georgeee.bachelor.yarn.db.entity.PwnSynset;
@@ -22,10 +22,8 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 @Component
-class ExportServiceDB {
-    private static final Logger log = LoggerFactory.getLogger(ExportServiceDB.class);
-    @Autowired
-    private GraphSettings grSettings;
+class GraphDbService {
+    private static final Logger log = LoggerFactory.getLogger(GraphDbService.class);
     @Autowired
     private TranslateEdgeRepository translateEdgeRepository;
     @Autowired
@@ -51,11 +49,14 @@ class ExportServiceDB {
         return synset;
     }
 
-    private TranslateEdge addEdge(PwnSynset pwnSynset, SynsetNode<SynsetEntry, ISynset> yarnNode, double lWeight, double rWeight, TranslateEdge masterEdge) {
-        if (lWeight < grSettings.getThreshold() || rWeight < grSettings.getThreshold()) {
+    private TranslateEdge addEdge(TraverseSettings trSettings, PwnSynset pwnSynset, SynsetNode<SynsetEntry, ISynset> yarnNode, double lWeight, double rWeight, TranslateEdge masterEdge) {
+        if (lWeight < trSettings.getThreshold() || rWeight < trSettings.getThreshold()) {
             return null;
         }
         double weight = (lWeight + rWeight) / 2;
+        if (weight < trSettings.getMeanThreshold()) {
+            return null;
+        }
         log.info("Adding edge : {} {}, dir={} rev={}", pwnSynset.getExternalId(), yarnNode.getId(), lWeight, rWeight);
         YarnSynset yarnSynset = getOrCreateNode(yarnNode.getId(), YarnSynset::new);
         TranslateEdge edge = getOrCreateEdge(pwnSynset, yarnSynset);
@@ -72,7 +73,8 @@ class ExportServiceDB {
     }
 
     @Transactional
-    public void exportToDb(SynsetNode<ISynset, SynsetEntry> pwnNode) {
+    public int exportToDb(Stage stage, SynsetNode<ISynset, SynsetEntry> pwnNode) {
+        int count = 0;
         PwnSynset pwnSynset = getOrCreateNode(pwnNode.getId(), PwnSynset::new);
         pwnSynset.getTranslateEdges().clear();
         for (Map.Entry<SynsetNode<SynsetEntry, ISynset>, TranslationLink> e : pwnNode.getEdges().entrySet()) {
@@ -80,14 +82,17 @@ class ExportServiceDB {
             if (yarnNode instanceof Cluster) {
                 TranslateEdge first = null;
                 for (Cluster.Member<SynsetEntry, ISynset> member : (Cluster<SynsetEntry, ISynset>) yarnNode) {
-                    TranslateEdge edge = addEdge(pwnSynset, member.getNode(), member.getWeight(), member.getRWeight(), first);
+                    TranslateEdge edge = addEdge(stage.getSettings(), pwnSynset, member.getNode(), member.getWeight(), member.getRWeight(), first);
+                    if(edge != null) count++;
                     if (first == null) first = edge;
                 }
             } else {
                 TranslationLink link = e.getValue();
-                addEdge(pwnSynset, yarnNode, link.getWeight(), getRWeight(pwnNode, yarnNode), null);
+                TranslateEdge edge = addEdge(stage.getSettings(), pwnSynset, yarnNode, link.getWeight(), getRWeight(pwnNode, yarnNode), null);
+                if(edge != null) count++;
             }
         }
         synsetRepository.save(pwnSynset);
+        return count;
     }
 }

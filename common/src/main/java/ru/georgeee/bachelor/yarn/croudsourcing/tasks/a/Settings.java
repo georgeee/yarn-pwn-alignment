@@ -5,7 +5,7 @@ import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-@Component
+@Component("taskA_Settings")
 @Getter @Setter
 public class Settings {
     @Value("${cs.tasks.a.wMax:2}")
@@ -14,8 +14,6 @@ public class Settings {
     private int dMax;
     @Value("${cs.tasks.a.nMax:15}")
     private int nMax;
-    @Value("${cs.tasks.a.overlap:5}")
-    private int overlap;
     @Value("${cs.tasks.a.dir}")
     private String dir;
     @Value("${cs.tasks.a.maxImages:4}")

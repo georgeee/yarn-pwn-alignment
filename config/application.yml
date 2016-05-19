@@ -15,9 +15,12 @@ imagenet:
   imagesDir: misc/imagenet
 
 app:
-    dictXml: file://${user.dir}/config/dicts.xml
+    dictsXml: file://${user.dir}/config/dicts.xml
+    alignmentStagesXml: file://${user.dir}/config/alignmentStages.xml
 cs:
   tasks:
+    b:
+      dir: croudsourcing/taskB
     a:
       dir: croudsourcing/taskA
 spring:

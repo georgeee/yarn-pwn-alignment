@@ -18,6 +18,7 @@ public abstract class Synset extends BaseEntity {
     @Column(nullable = false)
     private String externalId;
 
+    public abstract int getEdgeCount();
     public abstract List<TranslateEdge> getTranslateEdges();
     public abstract void setTranslateEdges(List<TranslateEdge> edges);
 

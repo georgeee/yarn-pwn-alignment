@@ -1,7 +1,7 @@
------
+---
 title: Выравнивание тезаурусов YARN и PWN
 permalink: index.html
------
+---
 
 # Croudsourcing test page
 

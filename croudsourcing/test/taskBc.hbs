@@ -1,0 +1,38 @@
+{{#with settings.pwn}}
+<p>Для данного <span title="смысловая единица языка, набор синонимов">синсета</span> из английского языка</p>
+<div class="words" title="Слова синсета">{{wordsStr}}</div>
+<div class="gloss" title="Определение">({{gloss}})</div>
+{{#if examples}}
+<div class="examples">
+	<ul>
+	{{#each examples}}
+ 	 <li><i title="Пример использования">{{this}}</i></li>
+	{{/each}}
+	</ul>
+</div>
+{{/if}}
+{{#if images}}
+<div class="galleria">
+	{{#each images}}
+  <a class="btn btn-default" href="{{../../settings/imageRoot}}{{../../pwnId}}/{{this}}" data-featherlight="image">
+		<img src="{{../../settings/imageRoot}}{{../../pwnId}}/{{this}}" />
+  </a>
+	{{/each}}
+</div>
+{{/if}}
+{{/with}}
+<p style="width=100%">
+<div>Выберете наиболее подходящие синсеты из русского языка</div><div>(отметьте обе галочки, если выбранный синсет полностью соответствует понятию (*)):</div>
+</p>
+<div class="options">
+{{#each settings.options}}
+  <div class="option" optionid="{{id}}">
+    E: {{field type="checkbox" name=(concat "e_checked_" id) label="" value=1 }}
+    A: {{field type="checkbox" name=(concat "a_checked_" id) label=wordsStr value=1 }} <br>
+  </div>
+{{/each}}
+</div>
+<div class="no-option">
+    E: {{field type="checkbox" name=(concat "e_checked_" 0) label="" value=1 }}
+    A: {{field type="checkbox" name=(concat "a_checked_" 0) label="ни один не подходит" value=1 }} <br>
+</div>

@@ -89,7 +89,7 @@
         }})
     })
     $.get(templatePath, function(template) {
-      var template2 = "{{#each this}}<div class=\"task\" taskId=\"{{taskId}}\">" + template + "</div>{{/each}}";
+      var template2 = "{{#each this}}<div class=\"task\" taskId=\"{{taskId}}\"><a name=\"task{{taskId}}\"></a><a href=\"#task{{taskId}}\">[#]</a>" + template + "</div>{{/each}}";
       var ctxPath = getParameterByName('ctx');
       $.get({ url: ctxPath, dataType: "json", success: function(ctx) {
         $('#main').html(Handlebars.compile(template2)(modifyCtx(ctx)))
@@ -114,24 +114,24 @@
           $this.attr('name', taskId + '_' + name);
           $this.attr('origName', name);
         })
-        $('#main .options input[type=checkbox]').change(function(){
+        $('#main .options-active input[type=checkbox]').change(function(){
           var $this = $(this);
           var name = $this.attr('origName');
           if($this.prop('checked')){
-            $this.parents('.task').find('.no-option input[type=checkbox]').prop('checked', false).change();
+            $this.parents('.task').find('.no-option-active input[type=checkbox]').prop('checked', false).change();
             if(name.match(/checked_/)){
               $this.parents('.option').find('input[type=checkbox]').removeAttr('disabled');
             }
           } else {
             if(name.match(/checked_/)){
-              $this.parents('.option').find('input[type=checkbox]:not([origName^=checked_])').attr('disabled', 'disabled').prop('checked', false).change();
+              $this.parents('.option').find('input[type=checkbox]:not([origName*=checked_])').attr('disabled', 'disabled').prop('checked', false).change();
             }
           }
         }).change()
-        $('#main .no-option input[type=checkbox]').change(function(){
+        $('#main .no-option-active input[type=checkbox]').change(function(){
           var $this = $(this);
           if($this.prop('checked')){
-            $this.parents('.task').find('.options input[type=checkbox]').prop('checked', false).change();
+            $this.parents('.task').find('.options-active input[type=checkbox]').prop('checked', false).change();
           }
         })
         var resPath = getParameterByName('res');

@@ -27,7 +27,7 @@ public class Task extends BaseEntity {
     private List<TaskSynset> taskSynsets = new ArrayList<>();
 
     @OneToMany(fetch = FetchType.LAZY, mappedBy = "task")
-    private List<Answer> answers = new ArrayList<>();
+    private List<AAnswer> answers = new ArrayList<>();
 
     @Formula("(SELECT COUNT(*) FROM CS_A_Answer r WHERE r.taskId = id)")
     private int resultCount;

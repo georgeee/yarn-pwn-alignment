@@ -7,12 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.supercsv.io.CsvListReader;
 import org.supercsv.io.CsvMapReader;
 import org.supercsv.prefs.CsvPreference;
 import ru.georgeee.bachelor.yarn.croudsourcing.tasks.TaskUtils;
-import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Answer;
+import ru.georgeee.bachelor.yarn.db.entity.tasks.a.AAnswer;
+import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Aggregation;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Worker;
-import ru.georgeee.bachelor.yarn.db.repo.tasks.a.AnswerRepository;
+import ru.georgeee.bachelor.yarn.db.repo.tasks.a.AggregationRepository;
+import ru.georgeee.bachelor.yarn.db.repo.tasks.a.AAnswerRepository;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -35,10 +38,12 @@ public class Importer {
     @Autowired
     private DbService dbService;
     @Autowired
-    private AnswerRepository answerRepository;
+    private AAnswerRepository answerRepository;
     @Autowired
     private TransactionTemplate txTemplate;
     private ExecutorService executorService;
+    @Autowired
+    private AggregationRepository aggregationRepository;
 
     @PostConstruct
     private void init() {
@@ -46,7 +51,7 @@ public class Importer {
     }
 
     public void importAnswersFromToloka(Path tsvPath) throws IOException {
-        Collection<Answer> answers = new ArrayList<>();
+        Collection<AAnswer> answers = new ArrayList<>();
         try (CsvMapReader reader = new CsvMapReader(Files.newBufferedReader(tsvPath), CsvPreference.TAB_PREFERENCE)) {
             String[] header = reader.getHeader(true);
             Map<String, String> row;
@@ -62,7 +67,7 @@ public class Importer {
                     log.info("Processing assignment {} ({} answers)", row.get(TOLOKA_TSV_ASSIGNMENT_ID), rows.size());
                     for (Map<String, String> _row : rows) {
                         Map<String, String> _rowFinal = _row;
-                        Answer answer = extractAnswerFromToloka(_rowFinal, assignmentId, worker, started);
+                        AAnswer answer = extractAnswerFromToloka(_rowFinal, assignmentId, worker, started);
                         if (answer != null) {
                             answers.add(answer);
                         }
@@ -91,14 +96,14 @@ public class Importer {
         }
     }
 
-    private Answer extractAnswerFromToloka(Map<String, String> row, String assignmentId, Worker worker, Date started) {
+    private AAnswer extractAnswerFromToloka(Map<String, String> row, String assignmentId, Worker worker, Date started) {
         int taskId = Integer.parseInt(row.get("INPUT:taskId"));
         Integer selectedId = null;
         String selectedIdString = row.get("OUTPUT:selectedId");
         if (StringUtils.isNotEmpty(selectedIdString)) {
             selectedId = Integer.parseInt(selectedIdString);
         }
-        Answer answer = new Answer();
+        AAnswer answer = new AAnswer();
         answer.setCreatedDate(started);
         answer.setAssignmentId(assignmentId);
         answer.setWorker(worker);
@@ -121,7 +126,7 @@ public class Importer {
         Worker worker = dbService.getOrCreateWorker(source, workerId);
         Map<Integer, JsonAnswer> answers = TaskUtils.importFromJson(jsonPath, JsonAnswer.class);
         answers.entrySet().forEach(e -> {
-            Answer answer = new Answer();
+            AAnswer answer = new AAnswer();
             Integer selectedId = e.getValue().selectedId;
             if (selectedId != null && selectedId != 0) {
                 answer.setSelectedId(selectedId);
@@ -132,6 +137,29 @@ public class Importer {
             answer.setAssignmentId(assignmentId);
             answerRepository.save(answer);
         });
+    }
+
+    public void importAggregationSimple(Path path, String tag) throws IOException {
+        List<Aggregation> aggregations = new ArrayList<>();
+        try (CsvListReader reader = new CsvListReader(Files.newBufferedReader(path), CsvPreference.STANDARD_PREFERENCE)) {
+            String[] header = reader.getHeader(true);
+            List<String> cols;
+            while ((cols = reader.read()) != null) {
+                int taskId = Integer.parseInt(cols.get(0));
+                int tsId = Integer.parseInt(cols.get(1));
+                Aggregation agr = new Aggregation();
+                agr.setSelectedId(tsId == 0 ? null : tsId);
+                agr.setTaskId(taskId);
+                agr.setTag(tag);
+                agr.setWeight(1.0);
+                aggregations.add(agr);
+            }
+        }
+        try {
+            aggregationRepository.save(aggregations);
+        } catch (Exception e) {
+            log.error("Error saving aggregation", e);
+        }
     }
 
     private static class JsonAnswer {

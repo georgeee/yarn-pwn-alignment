@@ -10,13 +10,12 @@ import java.io.Serializable;
 import java.util.Objects;
 
 @Entity
+@Getter
 @Table(name = "Translate_Edge")
 public class TranslateEdge implements Serializable {
 
-    @Getter
     @EmbeddedId
     private TeId embeddedId = new TeId();
-    @Getter
     @Setter
     @Basic
     @Generated(GenerationTime.INSERT)
@@ -24,22 +23,18 @@ public class TranslateEdge implements Serializable {
     @ManyToOne
     @MapsId("pwnId")
     @JoinColumn(name = "pwnId")
-    @Getter
     @Setter
     private PwnSynset pwnSynset;
     @ManyToOne
     @MapsId("yarnId")
     @JoinColumn(name = "yarnId")
-    @Getter
     @Setter
     private YarnSynset yarnSynset;
     @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "masterEdgeId", referencedColumnName = "id")
-    @Getter
     @Setter
     private TranslateEdge masterEdge;
     @Basic
-    @Getter
     @Setter
     private double weight;
 

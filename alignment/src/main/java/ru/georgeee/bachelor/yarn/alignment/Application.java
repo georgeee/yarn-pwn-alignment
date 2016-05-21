@@ -73,6 +73,8 @@ public class Application implements CommandLineRunner {
     @Value("${gv.out:out.dot}")
     private String graphvizOutFile;
 
+    @Value("${tag:}")
+    private String tag;
     @Value("${action:}")
     private String action;
     @Value("${file:}")
@@ -90,6 +92,8 @@ public class Application implements CommandLineRunner {
     private ExportService exportService;
     @Autowired
     private Generator taskAGenerator;
+    @Autowired
+    private ru.georgeee.bachelor.yarn.croudsourcing.tasks.b.Importer taskBImporter;
     @Autowired
     private Importer taskAImporter;
     @Autowired
@@ -142,24 +146,34 @@ public class Application implements CommandLineRunner {
                     orphans.forEach(this::lookupSynset);
                     break;
                 }
-                case "generateA":
-                case "genA": {
+                case "a.generate":
+                case "a.gen": {
                     taskAGenerator.generateAndExportByIds(parseIds());
                     break;
                 }
-                case "generateB":
-                case "genB": {
+                case "b.generate":
+                case "b.gen": {
                     taskBGenerator.generateAndExportByIds(parseIds());
                     break;
                 }
-                case "answersJson":
-                case "aj": {
+                case "a.answersJson":
+                case "a.aj": {
                     taskAImporter.importAnswersFromJson(Paths.get(file), Worker.Source.valueOf(source.toUpperCase()), author);
                     break;
                 }
-                case "answersToloka":
-                case "at": {
+                case "a.answersToloka":
+                case "a.at": {
                     taskAImporter.importAnswersFromToloka(Paths.get(file));
+                    break;
+                }
+                case "a.aggregationSimple":
+                case "a.as": {
+                    taskAImporter.importAggregationSimple(Paths.get(file), tag);
+                    break;
+                }
+                case "b.answersJson":
+                case "b.aj": {
+                    taskBImporter.importAnswersFromJson(Paths.get(file), author);
                     break;
                 }
                 case "exportMTsar":
@@ -178,6 +192,8 @@ public class Application implements CommandLineRunner {
                     }
                     break;
                 }
+                default:
+                    System.err.println("No action specified");
             }
         }
     }

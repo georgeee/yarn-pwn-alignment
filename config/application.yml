@@ -14,6 +14,8 @@ imagenet:
   mapping_30_31: id-files/imagenet30-31.mapping.txt
   imagesDir: misc/imagenet
 
+logging:
+    config: file://${user.dir}/config/logback.xml
 app:
     dictsXml: file://${user.dir}/config/dicts.xml
     alignmentStagesXml: file://${user.dir}/config/alignmentStages.xml

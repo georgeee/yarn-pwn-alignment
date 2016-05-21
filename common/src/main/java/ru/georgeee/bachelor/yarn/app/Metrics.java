@@ -26,7 +26,7 @@ public class Metrics {
 
     @PostConstruct
     private void init() {
-        p1ND = new NormalDistribution(null, 1 - params.getP1Mean(), params.getP1Sd());
+        p1ND = new NormalDistribution(null, params.getP1Mean(), params.getP1Sd());
         p1C = 1 / p1ND.density(params.getP1Mean());
     }
 
@@ -152,7 +152,7 @@ public class Metrics {
         double x = ((double) wordsLinked) / wordsTotal;
         double c = 1.0;
         if (x < params.getP1Mean()) {
-            c = p1ND.density(1 - x) * p1C;
+            c = p1ND.density(x) * p1C;
         }
         if (c > 1) {
             log.warn("p1Measure: linked={} total={} c={} (x={})", wordsLinked, wordsTotal, c, x);

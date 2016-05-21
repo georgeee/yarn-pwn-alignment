@@ -13,7 +13,7 @@ import java.util.Date;
 @ToString
 @Getter
 @Setter
-public class Answer extends BaseEntity {
+public class AAnswer extends BaseEntity {
     @Basic
     private Integer selectedId;
 

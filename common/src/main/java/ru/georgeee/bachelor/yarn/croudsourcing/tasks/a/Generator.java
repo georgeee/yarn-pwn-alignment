@@ -15,6 +15,7 @@ import ru.georgeee.bachelor.yarn.croudsourcing.tasks.TaskUtils;
 import ru.georgeee.bachelor.yarn.db.entity.PwnSynset;
 import ru.georgeee.bachelor.yarn.db.entity.Synset;
 import ru.georgeee.bachelor.yarn.db.entity.TranslateEdge;
+import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Aggregation;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Pool;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Task;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.TaskSynset;
@@ -26,11 +27,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Component("taskA_Generator")
 public class Generator {
+    private static final String EXPORT_AGGREGATIONS_JSON = "aggregations.json";
     private static final String INPUT_TSV_FILENAME = "input.tsv";
     private static final String INPUT_JSON_FILENAME = "input.json";
     private static final Gson gson = new GsonBuilder().create();
@@ -122,6 +123,26 @@ public class Generator {
         Pool pool = generateByPwnIds(ids, null);
         log.info("Created pool #{}", pool.getId());
         exportToTsv(pool);
+    }
+
+    @Transactional(readOnly = true)
+    public void exportAggregationsToJson(int poolId) throws IOException {
+        Pool pool = Objects.requireNonNull(poolRepository.getOne(poolId));
+        Map<String, Map<Integer, Map<Integer, Double>>> map = new HashMap<>();
+        for (Task task : pool.getTasks()) {
+            for (Aggregation aggr : task.getAggregations()) {
+                map.computeIfAbsent(aggr.getTag(), _k -> new HashMap<>())
+                        .computeIfAbsent(aggr.getTaskId(), _k -> new HashMap())
+                        .put(aggr.getSelectedId() == null ? 0 : aggr.getSelectedId(), aggr.getWeight());
+            }
+        }
+        Path dir = Paths.get(settings.getDir());
+        Path poolDir = dir.resolve(String.valueOf(poolId));
+        Files.createDirectories(poolDir);
+        Path path = poolDir.resolve(EXPORT_AGGREGATIONS_JSON);
+        try (BufferedWriter bw = Files.newBufferedWriter(path)) {
+            gson.toJson(map, bw);
+        }
     }
 
     private static class TaskConfig {

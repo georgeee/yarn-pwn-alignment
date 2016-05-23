@@ -1,8 +1,13 @@
 #!/bin/bash
 
+function urlencode() {
+  echo -n "$1" | perl -MURI::Escape -ne 'print uri_escape($_)'
+}
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 poolId=$1
+mod=$2
 
 cd "$DIR/$poolId/mtsar"
 
@@ -20,21 +25,25 @@ echo -n "Answers: "
 curl -F 'file=@answers.csv' "http://127.0.0.1:8080/stages/$stage/answers"
 echo ''
 
-mkdir "$DIR/$poolId/aggregation"
-cd "$DIR/$poolId/aggregation"
+aggrDir="$DIR/$poolId/aggregation"
 
-echo "Majority aggregation"
-curl -s -X PATCH "http://127.0.0.1:8080/stages/$stage" -d "answerAggregator=mtsar.processors.answer.MajorityVoting"
-wget --timeout=0 --tries=1 -O majority.csv "http://127.0.0.1:8080/stages/$stage/answers/aggregations.csv"
+mkdir "$aggrDir"
+cd "$aggrDir"
 
-echo "KOS aggregation"
-curl -s -X PATCH "http://127.0.0.1:8080/stages/$stage" -d "answerAggregator=mtsar.processors.answer.KOSAggregator"
-wget --timeout=0 --tries=1 -O kos.csv "http://127.0.0.1:8080/stages/$stage/answers/aggregations.csv"
+function aggregate {
+  if [[ ! -f "$1$mod.csv" ]]; then
+    echo "$1 aggregation"
+    curl -s -X PATCH "http://127.0.0.1:8080/stages/$stage" -d $2
+    wget --timeout=0 --tries=1 -O $1$mod.csv "http://127.0.0.1:8080/stages/$stage/answers/aggregations.csv"
+  fi
+}
 
-echo "Zencrowd aggregation"
-curl -s -X PATCH "http://127.0.0.1:8080/stages/$stage" -d "answerAggregator=mtsar.processors.meta.ZenCrowd"
-wget --timeout=0 --tries=1 -O zencrowd.csv "http://127.0.0.1:8080/stages/$stage/answers/aggregations.csv"
+opts=`urlencode "{\"maxIter\": 50000}"`
 
-for i in majority zencrowd kos; do
-  "$DIR/aggrCsv2InputJson.sh" "$i.csv" > "$i.json"
-done
+aggregate majority "workerRanker=mtsar.processors.meta.ZenCrowd&answerAggregator=mtsar.processors.answer.MajorityVoting"
+aggregate zencrowd "workerRanker=mtsar.processors.meta.ZenCrowd&answerAggregator=mtsar.processors.meta.ZenCrowd&options=$opts"
+aggregate dawid-skene "workerRanker=mtsar.processors.meta.DawidSkeneProcessor&answerAggregator=mtsar.processors.meta.DawidSkeneProcessor&options=$opts"
+
+cd "$DIR/../.."
+java -jar alignment/target/alignment-0.1.jar --action=a.aggr --files="$aggrDir/zencrowd$mod.csv,$aggrDir/dawid-skene$mod.csv,$aggrDir/majority$mod.csv"
+java -jar alignment/target/alignment-0.1.jar --action=a.eaj --poolId=$poolId

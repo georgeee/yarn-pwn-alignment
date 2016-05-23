@@ -11,11 +11,10 @@ import org.supercsv.io.CsvListReader;
 import org.supercsv.io.CsvMapReader;
 import org.supercsv.prefs.CsvPreference;
 import ru.georgeee.bachelor.yarn.croudsourcing.tasks.TaskUtils;
-import ru.georgeee.bachelor.yarn.db.entity.tasks.a.AAnswer;
-import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Aggregation;
-import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Worker;
-import ru.georgeee.bachelor.yarn.db.repo.tasks.a.AggregationRepository;
+import ru.georgeee.bachelor.yarn.db.entity.tasks.a.*;
 import ru.georgeee.bachelor.yarn.db.repo.tasks.a.AAnswerRepository;
+import ru.georgeee.bachelor.yarn.db.repo.tasks.a.AggregationRepository;
+import ru.georgeee.bachelor.yarn.db.repo.tasks.a.TaskRepository;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -42,6 +41,8 @@ public class Importer {
     @Autowired
     private TransactionTemplate txTemplate;
     private ExecutorService executorService;
+    @Autowired
+    private TaskRepository taskRepository;
     @Autowired
     private AggregationRepository aggregationRepository;
 
@@ -139,27 +140,50 @@ public class Importer {
         });
     }
 
-    public void importAggregationSimple(Path path, String tag) throws IOException {
+    public void importAggregation(List<Path> paths) throws IOException {
+        for (Path path : paths) {
+            String tag = StringUtils.removePattern(path.getFileName().toString(), "\\.[^\\.]*$");
+            try {
+                importAggregation(path, tag);
+            } catch (Exception e) {
+                log.warn("Error importing aggregation with tag {} (path {})", tag, path, e);
+            }
+        }
+    }
+
+    public void importAggregation(Path path, String tag) throws IOException {
         List<Aggregation> aggregations = new ArrayList<>();
+        Map<Integer, Map<Integer, Double>> data = new HashMap<>();
         try (CsvListReader reader = new CsvListReader(Files.newBufferedReader(path), CsvPreference.STANDARD_PREFERENCE)) {
             String[] header = reader.getHeader(true);
             List<String> cols;
             while ((cols = reader.read()) != null) {
                 int taskId = Integer.parseInt(cols.get(0));
-                int tsId = Integer.parseInt(cols.get(1));
-                Aggregation agr = new Aggregation();
-                agr.setSelectedId(tsId == 0 ? null : tsId);
-                agr.setTaskId(taskId);
-                agr.setTag(tag);
-                agr.setWeight(1.0);
-                aggregations.add(agr);
+                String[] _ords = cols.get(1).split("\\|");
+                String[] _weights = cols.get(2).split("\\|");
+                for (int i = 0; i < _ords.length; ++i) {
+                    int ord = Integer.parseInt(_ords[i]);
+                    double weight = Double.parseDouble(_weights[i]);
+                    data.computeIfAbsent(taskId, _t -> new HashMap<>()).put(ord, weight);
+                }
             }
         }
-        try {
-            aggregationRepository.save(aggregations);
-        } catch (Exception e) {
-            log.error("Error saving aggregation", e);
+        List<Task> tasks = taskRepository.findAll(data.keySet());
+        for (Task task : tasks) {
+            for (Map.Entry<Integer, Double> e : data.get(task.getId()).entrySet()) {
+                int ord = e.getKey();
+                double weight = e.getValue();
+                if (ord > task.getTaskSynsets().size())
+                    continue;
+                Aggregation aggr = new Aggregation();
+                aggr.setSelectedId(ord == 0 ? null : task.getTaskSynsets().get(ord - 1).getId());
+                aggr.setTaskId(task.getId());
+                aggr.setTag(tag);
+                aggr.setWeight(weight);
+                aggregations.add(aggr);
+            }
         }
+        aggregationRepository.save(aggregations);
     }
 
     private static class JsonAnswer {

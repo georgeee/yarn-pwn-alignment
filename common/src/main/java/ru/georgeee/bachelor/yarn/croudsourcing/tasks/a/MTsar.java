@@ -13,9 +13,12 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Component("taskA_MTsar")
 public class MTsar {
@@ -44,7 +47,6 @@ public class MTsar {
             answersWriter.writeHeader("id", "stage", "datetime", "tags", "type", "task_id", "worker_id", "answers");
             workersWriter.writeHeader("id", "stage", "datetime", "tags");
             for (Task task : pool.getTasks()) {
-                String answerOptions = task.getTaskSynsets().stream().map(ts -> ts.getId().toString()).collect(Collectors.joining("|"));
                 StringBuilder sb = new StringBuilder("For given pwn synset ");
                 appendSynset(sb, task.getPwnSynset());
                 sb.append(" choose one of yarn synsets ");
@@ -52,10 +54,16 @@ public class MTsar {
                     appendSynset(sb, ts.getYarnSynset());
                     sb.append(", ");
                 }
-                tasksWriter.write(task.getId(), stage, "", "", MTSAR_TASK_TYPE_SINGLE, sb.toString(), answerOptions + "|0");
+                Map<Integer, Integer> tsOrdinal = new HashMap<>();
+                for (int i = 0; i < task.getTaskSynsets().size(); ++i) {
+                    tsOrdinal.put(task.getTaskSynsets().get(i).getId(), i + 1);
+                }
+                String answerOptions = IntStream.rangeClosed(0, task.getTaskSynsets().size())
+                        .mapToObj(Integer::toString).collect(Collectors.joining("|"));
+                tasksWriter.write(task.getId(), stage, "", "", MTSAR_TASK_TYPE_SINGLE, sb.toString(), answerOptions);
                 for (AAnswer answer : task.getAnswers()) {
-                    Integer tsId = answer.getSelectedId();
-                    answersWriter.write(answer.getId(), stage, answer.getCreatedDate().getTime(), "", MTSAR_ANSWER_TYPE_ANSWER, answer.getTaskId(), answer.getWorker().getId(), tsId == null ? 0 : tsId);
+                    int tsId = answer.getSelectedId() == null ? 0 : tsOrdinal.get(answer.getSelectedId());
+                    answersWriter.write(answer.getId(), stage, answer.getCreatedDate().getTime(), "", MTSAR_ANSWER_TYPE_ANSWER, answer.getTaskId(), answer.getWorker().getId(), tsId);
                     workers.add(answer.getWorker());
                 }
             }

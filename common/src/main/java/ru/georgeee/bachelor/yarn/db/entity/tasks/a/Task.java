@@ -24,9 +24,14 @@ public class Task extends BaseEntity {
     private Pool pool;
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id")
     private List<TaskSynset> taskSynsets = new ArrayList<>();
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "task")
+    @OneToMany
+    @JoinColumn(name = "taskId")
+    private List<Aggregation> aggregations = new ArrayList<>();
+
+    @OneToMany(mappedBy = "task")
     private List<AAnswer> answers = new ArrayList<>();
 
     @Formula("(SELECT COUNT(*) FROM CS_A_Answer r WHERE r.taskId = id)")

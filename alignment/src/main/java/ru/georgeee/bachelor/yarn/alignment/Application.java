@@ -77,6 +77,8 @@ public class Application implements CommandLineRunner {
     private String tag;
     @Value("${action:}")
     private String action;
+    @Value("${files:}")
+    private String files;
     @Value("${file:}")
     private String file;
     @Value("${source:}")
@@ -166,9 +168,11 @@ public class Application implements CommandLineRunner {
                     taskAImporter.importAnswersFromToloka(Paths.get(file));
                     break;
                 }
-                case "a.aggregationSimple":
-                case "a.as": {
-                    taskAImporter.importAggregationSimple(Paths.get(file), tag);
+                case "a.aggregation":
+                case "a.aggr": {
+                    taskAImporter.importAggregation(Arrays.asList(files.split(","))
+                            .stream().map(Paths::get)
+                            .collect(Collectors.toList()));
                     break;
                 }
                 case "b.answersJson":
@@ -176,9 +180,14 @@ public class Application implements CommandLineRunner {
                     taskBImporter.importAnswersFromJson(Paths.get(file), author);
                     break;
                 }
-                case "exportMTsar":
-                case "em": {
+                case "a.exportMTsar":
+                case "a.em": {
                     taskAMTsar.exportToMTsar(poolId);
+                    break;
+                }
+                case "a.exportAggregationJson":
+                case "a.eaj": {
+                    taskAGenerator.exportAggregationsToJson(poolId);
                     break;
                 }
                 case "orphansInDb": {

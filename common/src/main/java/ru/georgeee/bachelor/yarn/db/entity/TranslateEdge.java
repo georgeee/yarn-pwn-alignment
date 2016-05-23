@@ -59,6 +59,14 @@ public class TranslateEdge implements Serializable {
         private Integer pwnId;
         private Integer yarnId;
 
+        public TeId() {
+        }
+
+        public TeId(Integer pwnId, Integer yarnId) {
+            this.pwnId = pwnId;
+            this.yarnId = yarnId;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;

@@ -25,6 +25,9 @@ cs:
       dir: croudsourcing/taskB
     a:
       dir: croudsourcing/taskA
+      aggr:
+        tags: zencrowd
+        threshold: 0.4
 spring:
     jpa:
         database: POSTGRESQL

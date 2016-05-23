@@ -35,7 +35,6 @@ ALTER TABLE Synset_Image ADD CONSTRAINT FK_Synset_Image_SynsetId FOREIGN KEY (Sy
 
 CREATE TABLE CS_A_Pool (
     Id SERIAL NOT NULL PRIMARY KEY,
-    PredecessorId INT,
     Completed BOOLEAN NOT NULL DEFAULT false
 );
 
@@ -119,3 +118,11 @@ ALTER TABLE CS_A_Aggregation ADD CONSTRAINT CH_CS_A_Aggregation_Weight CHECK (We
 ALTER TABLE CS_A_Aggregation ADD CONSTRAINT FK_CS_A_Aggregation_TaskId FOREIGN KEY (TaskId) REFERENCES CS_A_Task (Id);
 ALTER TABLE CS_A_Aggregation ADD CONSTRAINT FK_CS_A_Aggregation_SelectedId FOREIGN KEY (SelectedId) REFERENCES CS_A_Task_Synset (Id);
 ALTER TABLE CS_A_Aggregation ADD CONSTRAINT UQ_CS_A_Aggregation_TaskId_Tag_SelectedId UNIQUE (TaskId, Tag, SelectedId);
+
+CREATE TABLE CS_A_Pool_Predecessor (
+    PoolId INT NOT NULL,
+    PredecessorId INT NOT NULL,
+    PRIMARY KEY (PoolId, PredecessorId)
+);
+ALTER TABLE CS_A_Pool_Predecessor ADD CONSTRAINT FK_CS_CS_A_Pool_Predecessor_PoolId FOREIGN KEY (PoolId) REFERENCES CS_A_Pool (Id);
+ALTER TABLE CS_A_Pool_Predecessor ADD CONSTRAINT FK_CS_CS_A_Pool_Predecessor_PredecessorId FOREIGN KEY (PredecessorId) REFERENCES CS_A_Pool (Id);

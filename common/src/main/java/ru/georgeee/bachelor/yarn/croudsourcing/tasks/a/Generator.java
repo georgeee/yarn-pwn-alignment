@@ -15,6 +15,7 @@ import ru.georgeee.bachelor.yarn.croudsourcing.tasks.TaskUtils;
 import ru.georgeee.bachelor.yarn.db.entity.PwnSynset;
 import ru.georgeee.bachelor.yarn.db.entity.Synset;
 import ru.georgeee.bachelor.yarn.db.entity.TranslateEdge;
+import ru.georgeee.bachelor.yarn.db.entity.YarnSynset;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Aggregation;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Pool;
 import ru.georgeee.bachelor.yarn.db.entity.tasks.a.Task;
@@ -28,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component("taskA_Generator")
 public class Generator {
@@ -45,47 +47,105 @@ public class Generator {
     @Autowired
     private SynsetRepository synsetRepository;
 
-    @Transactional
-    public Pool generateByPwnIds(List<String> ids, Pool predecessor) {
-        List<PwnSynset> pwnSynsets = new ArrayList<>();
-        for (String id : ids) {
-            Synset s = synsetRepository.findByExternalId(id);
-            if (s instanceof PwnSynset) {
-                pwnSynsets.add((PwnSynset) s);
-            }
-        }
-        return generate(pwnSynsets, predecessor);
+    private Set<YarnSynset> getBaseCandidates(PwnSynset pwnSynset) {
+        List<TranslateEdge> allNMEdges = pwnSynset.getNotMasteredTranslateEdges();
+        int totalCandidates = Math.min(allNMEdges.size(), settings.getNMax());
+        if (totalCandidates == 0) return null;
+        return allNMEdges.subList(0, totalCandidates).stream()
+                .map(TranslateEdge::getYarnSynset)
+                .collect(Collectors.toSet());
     }
 
-    public Pool generate(List<PwnSynset> synsets, Pool predecessor) {
-        Pool pool = new Pool();
-        pool.setPredecessor(predecessor);
+    private void filterEdgesFromPredecessors(Pool pred, Map<PwnSynset, Set<YarnSynset>> map, Map<PwnSynset, Map<YarnSynset, List<Task>>> sources) {
+        for (Task task : pred.getTasks()) {
+            Set<YarnSynset> candidates = map.get(task.getPwnSynset());
+            if (candidates == null) continue;
+            Set<Integer> winners = computeWinners(task);
+            for (TaskSynset ts : task.getTaskSynsets()) {
+                YarnSynset yarnSynset = ts.getYarnSynset();
+                if (winners == null || winners.contains(ts.getId())) {
+                    sources
+                            .computeIfAbsent(task.getPwnSynset(), _k -> new HashMap<>())
+                            .computeIfAbsent(yarnSynset, _k -> new ArrayList<>())
+                            .add(task);
+                } else {
+                    candidates.remove(yarnSynset);
+                }
+            }
+        }
+    }
 
+    private Pool generate(List<PwnSynset> synsets, List<Integer> predecessorIds) {
+        Pool pool = new Pool();
+        List<Pool> predecessors = poolRepository.findAll(predecessorIds);
+        pool.setPredecessors(predecessors);
+        Map<PwnSynset, Map<YarnSynset, List<Task>>> allSources = new HashMap<>();
+        Map<PwnSynset, Set<YarnSynset>> map = new HashMap<>();
         for (PwnSynset pwnSynset : synsets) {
-            List<TranslateEdge> edges = pwnSynset.getNotMasteredTranslateEdges();
-            List<Task> tasks = new ArrayList<>();
-            int totalCandidates = Math.min(edges.size(), settings.getNMax());
-            if (totalCandidates == 0) continue;
-            int taskCount = totalCandidates / settings.getDMax() + (totalCandidates % settings.getDMax() == 0 ? 0 : 1);
-            log.info("Generate: pwn={} total={} taskCount={}", pwnSynset.getExternalId(), totalCandidates, taskCount);
-            for (int i = 0; i < taskCount; ++i) {
-                Task task = new Task();
-                task.setPool(pool);
-                task.setPwnSynset(pwnSynset);
-                tasks.add(task);
+            Set<YarnSynset> candidates = getBaseCandidates(pwnSynset);
+            if (candidates != null)
+                map.put(pwnSynset, candidates);
+        }
+        for (Pool pred : predecessors) {
+            filterEdgesFromPredecessors(pred, map, allSources);
+        }
+        for (PwnSynset pwnSynset : map.keySet()) {
+            Set<YarnSynset> candidates = map.get(pwnSynset);
+            Map<YarnSynset, List<Task>> sources = allSources.get(pwnSynset);
+            if (!candidates.isEmpty()) {
+                pool.getTasks().addAll(composeTasks(pool, pwnSynset, candidates, sources));
             }
-            for (int i = 0; i < totalCandidates; ++i) {
-                TranslateEdge edge = edges.get(i);
-                Task task = tasks.get(i % taskCount);
-                TaskSynset taskSynset = new TaskSynset();
-                taskSynset.setTask(task);
-                taskSynset.setYarnSynset(edge.getYarnSynset());
-                task.getTaskSynsets().add(taskSynset);
-            }
-            pool.getTasks().addAll(tasks);
         }
         poolRepository.save(pool);
         return pool;
+    }
+
+    private List<Task> composeTasks(Pool pool, PwnSynset pwnSynset, Set<YarnSynset> candidates, Map<YarnSynset, List<Task>> sources) {
+        int totalCandidates = candidates.size();
+        int taskCount = totalCandidates / settings.getDMax() + (totalCandidates % settings.getDMax() == 0 ? 0 : 1);
+        log.info("Generate: pwn={} total={} taskCount={}", pwnSynset.getExternalId(), totalCandidates, taskCount);
+        List<Task> tasks = new ArrayList<>();
+        for (int i = 0; i < taskCount; ++i) {
+            Task task = new Task();
+            task.setPool(pool);
+            task.setPwnSynset(pwnSynset);
+            tasks.add(task);
+        }
+        int i = 0;
+        for (YarnSynset yarnSynset : candidates) {
+            Task task = tasks.get(i++ % taskCount);
+            TaskSynset taskSynset = new TaskSynset();
+            taskSynset.setTask(task);
+            taskSynset.setYarnSynset(yarnSynset);
+            task.getTaskSynsets().add(taskSynset);
+        }
+
+        return sources == null ? tasks : tasks.stream().filter(task -> {
+            Set<Task> predTasks = new HashSet<>();
+            for (TaskSynset ts : task.getTaskSynsets()) {
+                List<Task> l = sources.get(ts.getYarnSynset());
+                if (l == null) {
+                    predTasks.add(null);
+                } else {
+                    predTasks.addAll(l);
+                }
+            }
+            return predTasks.contains(null) || predTasks.size() > 1;
+        }).collect(Collectors.toList());
+    }
+
+    private Set<Integer> computeWinners(Task task) {
+        Set<Integer> winners = new HashSet<>();
+        boolean hasAnyAggr = false;
+        for (Aggregation aggr : task.getAggregations()) {
+            if (!settings.getAggrTags().contains(aggr.getTag()))
+                continue;
+            hasAnyAggr = true;
+            if (aggr.getWeight() < settings.getAggrThreshold())
+                continue;
+            winners.add(aggr.getSelectedId());
+        }
+        return hasAnyAggr ? winners : null;
     }
 
     @Transactional
@@ -119,8 +179,15 @@ public class Generator {
     }
 
     @Transactional
-    public void generateAndExportByIds(List<String> ids) throws IOException {
-        Pool pool = generateByPwnIds(ids, null);
+    public void generateAndExportByIds(List<String> ids, List<Integer> predecessorIds) throws IOException {
+        List<PwnSynset> pwnSynsets = new ArrayList<>();
+        for (String id : ids) {
+            Synset s = synsetRepository.findByExternalId(id);
+            if (s instanceof PwnSynset) {
+                pwnSynsets.add((PwnSynset) s);
+            }
+        }
+        Pool pool = generate(pwnSynsets, predecessorIds);
         log.info("Created pool #{}", pool.getId());
         exportToTsv(pool);
     }

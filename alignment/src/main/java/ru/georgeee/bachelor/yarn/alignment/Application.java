@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static ru.georgeee.bachelor.yarn.app.AppUtils.splitParam;
+
 @SpringBootApplication(scanBasePackages = {"ru.georgeee.bachelor.yarn"})
 public class Application implements CommandLineRunner {
 
@@ -73,8 +75,6 @@ public class Application implements CommandLineRunner {
     @Value("${gv.out:out.dot}")
     private String graphvizOutFile;
 
-    @Value("${tag:}")
-    private String tag;
     @Value("${action:}")
     private String action;
     @Value("${files:}")
@@ -85,6 +85,8 @@ public class Application implements CommandLineRunner {
     private String source;
     @Value("${author:}")
     private String author;
+    @Value("${poolIds:}")
+    private String poolIds;
     @Value("${poolId:0}")
     private int poolId;
     @Value("${verbose:false}")
@@ -150,7 +152,7 @@ public class Application implements CommandLineRunner {
                 }
                 case "a.generate":
                 case "a.gen": {
-                    taskAGenerator.generateAndExportByIds(parseIds());
+                    taskAGenerator.generateAndExportByIds(parseIds(), splitParam(poolIds, Integer::parseInt));
                     break;
                 }
                 case "b.generate":
@@ -160,7 +162,8 @@ public class Application implements CommandLineRunner {
                 }
                 case "a.answersJson":
                 case "a.aj": {
-                    taskAImporter.importAnswersFromJson(Paths.get(file), Worker.Source.valueOf(source.toUpperCase()), author);
+                    taskAImporter.importAnswersFromJson(Paths.get(file),
+                            Worker.Source.valueOf(source.toUpperCase()), author);
                     break;
                 }
                 case "a.answersToloka":
@@ -170,9 +173,7 @@ public class Application implements CommandLineRunner {
                 }
                 case "a.aggregation":
                 case "a.aggr": {
-                    taskAImporter.importAggregation(Arrays.asList(files.split(","))
-                            .stream().map(Paths::get)
-                            .collect(Collectors.toList()));
+                    taskAImporter.importAggregation(splitParam(files, Paths::get));
                     break;
                 }
                 case "b.answersJson":

@@ -13,9 +13,13 @@ import java.util.List;
 @Getter
 @Setter
 public class Pool extends BaseEntity {
-    @OneToOne
-    @JoinColumn(name = "PredecessorId")
-    private Pool predecessor;
+    @ManyToMany(cascade = CascadeType.ALL)
+    @JoinTable(
+            name = "CS_A_Pool_Predecessor",
+            joinColumns = @JoinColumn(name = "poolId"),
+            inverseJoinColumns = @JoinColumn(name = "predecessorId")
+    )
+    private List<Pool> predecessors = new ArrayList<>();
 
     @Basic
     private boolean completed;

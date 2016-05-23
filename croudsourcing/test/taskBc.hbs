@@ -29,10 +29,18 @@
   <div class="option" optionid="{{id}}">
     E: {{field type="checkbox" name=(concat "e_checked_" id) label="" value=1 }}
     A: {{field type="checkbox" name=(concat "a_checked_" id) label=wordsStr value=1 }} <br>
+    <span class="miscData">
+      W: {{field type="text" name=(concat "weight_" id) label="" value='' }}
+      C: {{field type="checkbox" name=(concat "clean_" id) label="" value="true" }}
+    </span>
   </div>
 {{/each}}
 </div>
 <div class="no-option">
     E: {{field type="checkbox" name=(concat "e_checked_" 0) label="" value=1 }}
     A: {{field type="checkbox" name=(concat "a_checked_" 0) label="ни один не подходит" value=1 }} <br>
+    <span class="miscData">
+      W: {{field type="text" name=(concat "weight_" 0) label="" value='' }}
+      C: {{field type="checkbox" name=(concat "clean_" 0) label="" value="true" }}
+    </span>
 </div>

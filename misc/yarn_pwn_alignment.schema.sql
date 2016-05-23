@@ -119,26 +119,3 @@ ALTER TABLE CS_A_Aggregation ADD CONSTRAINT CH_CS_A_Aggregation_Weight CHECK (We
 ALTER TABLE CS_A_Aggregation ADD CONSTRAINT FK_CS_A_Aggregation_TaskId FOREIGN KEY (TaskId) REFERENCES CS_A_Task (Id);
 ALTER TABLE CS_A_Aggregation ADD CONSTRAINT FK_CS_A_Aggregation_SelectedId FOREIGN KEY (SelectedId) REFERENCES CS_A_Task_Synset (Id);
 ALTER TABLE CS_A_Aggregation ADD CONSTRAINT UQ_CS_A_Aggregation_TaskId_Tag_SelectedId UNIQUE (TaskId, Tag, SelectedId);
-
-CREATE VIEW CS_A_B_COMPARE
-AS
-SELECT pwnId, yarnId,
-      (CASE WHEN src = 1 THEN 'expert' WHEN src = 2 THEN 'aggr' WHEN src = 3 THEN 'both' ELSE 'none' END) as src,
-      weight, clean, assignmentId, tag, poolId, taskId
-FROM (
-  SELECT COALESCE(ed.pwnId, ad.pwnId) as pwnId, COALESCE(ed.yarnId, ad.yarnId, 0) as yarnId,
-         ed.Clean, ad.Weight, COALESCE(ad.src,0) + COALESCE(ed.src,0) as src,
-         ed.assignmentId, ad.poolId, ad.tag, ad.taskId
-  from (SELECT ba.pwnId, bas.yarnId, bas.clean, 1 as src, assignmentId from cs_b_answer ba left
-        JOIN cs_b_answer_selected bas ON ba.Id = bas.answerId
-        --where ba.assignmentId = '950530ce-20f3-449b-8d60-22f42dff8dcc'
-       ) ed
-  FULL OUTER JOIN (SELECT t.id as taskId, t.pwnId, ts.yarnId, aa.weight, 2 as src, poolId, tag
-                   FROM cs_a_task t
-                   JOIN cs_a_aggregation aa ON aa.taskId = t.Id
-                   LEFT JOIN cs_a_task_synset ts ON ts.Id = aa.selectedId
-                   -- WHERE t.poolId = 12 AND tag = 'zencrowd1'
-                  ) ad ON COALESCE(ed.yarnId,0) = COALESCE(ad.yarnId,0) AND ed.pwnId = ad.pwnId
-               ) t
-ORDER BY pwnId, t.src DESC, yarnId;
-

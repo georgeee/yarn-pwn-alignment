@@ -18,6 +18,9 @@
   margin-left: 5px;
   margin-right: 5px;
 }
+.miscData input[type=text] {
+  width: 100px;
+}
 </style>
 </head>
 <body>
@@ -67,20 +70,23 @@
       })
     }
     var res = {};
+    var disableReloadJson=false;
     $('#applyResult').click(function(){
         var obj = JSON.parse($('#result').val());
+        disableReloadJson=true;
         res = obj;
         $('div.task').css('display', 'none')
         for(var taskId in obj){
           var res = obj[taskId];
           for(var key in res){
             var val = res[key];
-            $('input[name=' + taskId + '_'+key+'][type=input]').val(val).change();
-            $('input[name=' + taskId + '_'+key+'][type=radio][value=' + val + ']').prop("checked", true).change();
-            $('input[name=' + taskId + '_'+key+'][type=checkbox]').prop("checked", true).change();
+            $('input[name=' + taskId + '_'+key+'][type=text]').val(val).change();
+            $('input[name=' + taskId + '_'+key+'][type=radio][value=\'' + val + '\']').prop("checked", true).change();
+            $('input[name=' + taskId + '_'+key+'][type=checkbox][value=\'' + val + '\']').prop("checked", true).change();
           }
           $('div.task[taskid='+taskId+']').css('display', 'inline-block')
         }
+        disableReloadJson=false;
     })
     $('#saveResult').click(function(){
         var txt = JSON.stringify(res);
@@ -115,7 +121,9 @@
           } else {
             res[taskId][name] = this.value;
           }
-          $('#result').val(JSON.stringify(res))
+          if(!disableReloadJson){
+            $('#result').val(JSON.stringify(res))
+          }
         }
       })
       $('#main input').each(function(){

@@ -162,8 +162,9 @@ public class Application implements CommandLineRunner {
                 }
                 case "a.answersJson":
                 case "a.aj": {
-                    taskAImporter.importAnswersFromJson(Paths.get(file),
+                    String assignmentId = taskAImporter.importAnswersFromJson(Paths.get(file),
                             Worker.Source.valueOf(source.toUpperCase()), author);
+                    System.out.println("Assignment id: " + assignmentId);
                     break;
                 }
                 case "a.answersToloka":
@@ -178,7 +179,8 @@ public class Application implements CommandLineRunner {
                 }
                 case "b.answersJson":
                 case "b.aj": {
-                    taskBImporter.importAnswersFromJson(Paths.get(file), author);
+                    String assignmentId = taskBImporter.importAnswersFromJson(Paths.get(file), author);
+                    System.out.println("Assignment id: " + assignmentId);
                     break;
                 }
                 case "a.exportMTsar":

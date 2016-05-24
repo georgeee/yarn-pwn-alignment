@@ -63,7 +63,7 @@ public class MTsar {
                 tasksWriter.write(task.getId(), stage, "", "", MTSAR_TASK_TYPE_SINGLE, sb.toString(), answerOptions);
                 for (AAnswer answer : task.getAnswers()) {
                     int tsId = answer.getSelectedId() == null ? 0 : tsOrdinal.get(answer.getSelectedId());
-                    answersWriter.write(answer.getId(), stage, answer.getCreatedDate().getTime(), "", MTSAR_ANSWER_TYPE_ANSWER, answer.getTaskId(), answer.getWorker().getId(), tsId);
+                    answersWriter.write(answer.getId(), stage, answer.getCreatedDate().getTime() / 1000, "", MTSAR_ANSWER_TYPE_ANSWER, answer.getTaskId(), answer.getWorker().getId(), tsId);
                     workers.add(answer.getWorker());
                 }
             }

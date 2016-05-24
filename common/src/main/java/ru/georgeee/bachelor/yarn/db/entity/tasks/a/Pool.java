@@ -6,7 +6,9 @@ import ru.georgeee.bachelor.yarn.db.entity.BaseEntity;
 
 import javax.persistence.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "CS_A_Pool")
@@ -25,6 +27,6 @@ public class Pool extends BaseEntity {
     private boolean completed;
 
     @OneToMany(fetch = FetchType.EAGER, mappedBy = "pool", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Task> tasks = new ArrayList<>();
+    private Set<Task> tasks = new HashSet<>();
 
 }

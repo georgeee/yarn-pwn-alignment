@@ -28,7 +28,7 @@ public class Importer {
     private BAnswerRepository answerRepository;
 
     @Transactional
-    public void importAnswersFromJson(Path path, String author) throws IOException {
+    public String importAnswersFromJson(Path path, String author) throws IOException {
         String assignmentId = UUID.randomUUID().toString();
         JsonAnswers answers;
         try (BufferedReader br = Files.newBufferedReader(path)) {
@@ -60,6 +60,7 @@ public class Importer {
             answerEntities.add(answer);
         });
         answerRepository.save(answerEntities);
+        return assignmentId;
     }
 
     private static class JsonAnswers extends HashMap<Integer, Map<String, Integer>> {

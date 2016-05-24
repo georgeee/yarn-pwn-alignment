@@ -122,7 +122,7 @@ public class Importer {
     }
 
     @Transactional
-    public void importAnswersFromJson(Path jsonPath, Worker.Source source, String workerId) throws IOException {
+    public String importAnswersFromJson(Path jsonPath, Worker.Source source, String workerId) throws IOException {
         String assignmentId = UUID.randomUUID().toString();
         Worker worker = dbService.getOrCreateWorker(source, workerId);
         Map<Integer, JsonAnswer> answers = TaskUtils.importFromJson(jsonPath, JsonAnswer.class);
@@ -138,6 +138,7 @@ public class Importer {
             answer.setAssignmentId(assignmentId);
             answerRepository.save(answer);
         });
+        return assignmentId;
     }
 
     public void importAggregation(List<Path> paths) throws IOException {

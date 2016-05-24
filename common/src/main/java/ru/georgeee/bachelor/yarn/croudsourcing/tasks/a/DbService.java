@@ -26,7 +26,7 @@ class DbService {
     @Autowired
     private WorkerRepository workerRepository;
 
-    @Transactional(readOnly = true)
+    @Transactional
     @Cacheable("TaskA_Importer_Worker")
     public Worker getOrCreateWorker(Worker.Source source, String externalId) {
         Worker worker = workerRepository.findBySourceAndExternalId(source, externalId);
@@ -43,7 +43,6 @@ class DbService {
     @Transactional(readOnly = true)
     public Pool getPoolWithTasks(int poolId) {
         Pool pool = poolRepository.getOne(poolId);
-        Hibernate.initialize(pool.getTasks());
         for (Task task : pool.getTasks()) {
             Hibernate.initialize(task.getAnswers());
             Hibernate.initialize(task.getTaskSynsets());

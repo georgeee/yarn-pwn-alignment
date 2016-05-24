@@ -38,7 +38,7 @@ function aggregate {
   fi
 }
 
-opts=`urlencode "{\"maxIter\": 50000}"`
+opts=`urlencode "{\"maxIter\": 500}"`
 
 aggregate majority "workerRanker=mtsar.processors.meta.ZenCrowd&answerAggregator=mtsar.processors.answer.MajorityVoting"
 aggregate zencrowd "workerRanker=mtsar.processors.meta.ZenCrowd&answerAggregator=mtsar.processors.meta.ZenCrowd&options=$opts"

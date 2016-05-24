@@ -21,6 +21,9 @@
 .miscData input[type=text] {
   width: 100px;
 }
+.miscData {
+  margin-left: 20px;
+}
 </style>
 </head>
 <body>
@@ -55,8 +58,15 @@
       return s;
     });
     Handlebars.registerHelper('field', function(options){
-      return new Handlebars.SafeString("<input type=\"" + options.hash.type + "\" name=\"" + options.hash.name + "\" value=\"" + options.hash.value + "\" />"
-        + (options.hash.label ? "<span class=\"label\">" + options.hash.label + "</span>" : ''));
+      if (options.hash.type == 'span') {
+          return new Handlebars.SafeString(
+              (options.hash.label ? "<span class=\"label\">" + options.hash.label + "</span>" : '')
+              + "<span class=\"input\" name=\"" + options.hash.name + "\">" + options.hash.value + "</span>"
+          );
+      } else {
+          return new Handlebars.SafeString("<input type=\"" + options.hash.type + "\" name=\"" + options.hash.name + "\" value=\"" + options.hash.value + "\" />"
+            + (options.hash.label ? "<span class=\"label\">" + options.hash.label + "</span>" : ''));
+      }
     })
     function modifyCtx(ctx){
       return ctx.map(function(v){
@@ -77,14 +87,16 @@
         res = obj;
         $('div.task').css('display', 'none')
         for(var taskId in obj){
+          var $task = $('div.task[taskid='+taskId+']')
           var res = obj[taskId];
           for(var key in res){
             var val = res[key];
-            $('input[name=' + taskId + '_'+key+'][type=text]').val(val).change();
-            $('input[name=' + taskId + '_'+key+'][type=radio][value=\'' + val + '\']').prop("checked", true).change();
-            $('input[name=' + taskId + '_'+key+'][type=checkbox][value=\'' + val + '\']').prop("checked", true).change();
+            $task.find('span.input[name=' + taskId + '_'+key+']').text(val);
+            $task.find('input[name=' + taskId + '_'+key+'][type=text]').val(val).change();
+            $task.find('input[name=' + taskId + '_'+key+'][type=radio][value=\'' + val + '\']').prop("checked", true).change();
+            $task.find('input[name=' + taskId + '_'+key+'][type=checkbox][value=\'' + val + '\']').prop("checked", true).change();
           }
-          $('div.task[taskid='+taskId+']').css('display', 'inline-block')
+          $task.css('display', 'inline-block')
         }
         disableReloadJson=false;
     })
@@ -126,7 +138,7 @@
           }
         }
       })
-      $('#main input').each(function(){
+      $('#main input, #main span.input').each(function(){
         var $this = $(this);
         var taskId = $this.parents('.task').attr('taskId');
         var name = $this.attr('name');

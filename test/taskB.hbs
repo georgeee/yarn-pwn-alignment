@@ -24,13 +24,13 @@
 <p style="width=100%">
 <div>Выберете наиболее подходящие синсеты из русского языка</div><div>(отметьте обе галочки, если выбранный синсет полностью соответствует понятию (*)):</div>
 </p>
-<div class="options">
+<div class="options options-active">
 {{#each settings.options}}
   <div class="option" optionid="{{id}}">
     {{field type="checkbox" name=(concat "checked_" id) label="" value=1 }} {{field type="checkbox" name=(concat "clean_" id) label=wordsStr value=1 }} <br>
   </div>
 {{/each}}
 </div>
-<div class="no-option">
+<div class="no-option no-option-active">
   {{field type="checkbox" name="none" label="ни один не подходит" value=1 }}
 </div>

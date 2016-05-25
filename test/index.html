@@ -9,7 +9,6 @@
   border: 1px dotted;
   display: inline-block;
   margin: 5px;
-  width:100%
 }
 .task input[type=checkbox] {
   margin-left: 0;
@@ -18,6 +17,12 @@
 .task .label {
   margin-left: 5px;
   margin-right: 5px;
+}
+.miscData input[type=text] {
+  width: 100px;
+}
+.miscData {
+  margin-left: 20px;
 }
 </style>
 </head>
@@ -53,8 +58,15 @@
       return s;
     });
     Handlebars.registerHelper('field', function(options){
-      return new Handlebars.SafeString("<input type=\"" + options.hash.type + "\" name=\"" + options.hash.name + "\" value=\"" + options.hash.value + "\" />"
-        + (options.hash.label ? "<span class=\"label\">" + options.hash.label + "</span>" : ''));
+      if (options.hash.type == 'span') {
+          return new Handlebars.SafeString(
+              (options.hash.label ? "<span class=\"label\">" + options.hash.label + "</span>" : '')
+              + "<span class=\"input\" name=\"" + options.hash.name + "\">" + options.hash.value + "</span>"
+          );
+      } else {
+          return new Handlebars.SafeString("<input type=\"" + options.hash.type + "\" name=\"" + options.hash.name + "\" value=\"" + options.hash.value + "\" />"
+            + (options.hash.label ? "<span class=\"label\">" + options.hash.label + "</span>" : ''));
+      }
     })
     function modifyCtx(ctx){
       return ctx.map(function(v){
@@ -68,20 +80,25 @@
       })
     }
     var res = {};
+    var disableReloadJson=false;
     $('#applyResult').click(function(){
         var obj = JSON.parse($('#result').val());
+        disableReloadJson=true;
         res = obj;
         $('div.task').css('display', 'none')
         for(var taskId in obj){
+          var $task = $('div.task[taskid='+taskId+']')
           var res = obj[taskId];
           for(var key in res){
             var val = res[key];
-            $('input[name=' + taskId + '_'+key+'][type=input]').val(val).change();
-            $('input[name=' + taskId + '_'+key+'][type=radio][value=' + val + ']').prop("checked", true).change();
-            $('input[name=' + taskId + '_'+key+'][type=checkbox]').prop("checked", true).change();
+            $task.find('span.input[name=' + taskId + '_'+key+']').text(val);
+            $task.find('input[name=' + taskId + '_'+key+'][type=text]').val(val).change();
+            $task.find('input[name=' + taskId + '_'+key+'][type=radio][value=\'' + val + '\']').prop("checked", true).change();
+            $task.find('input[name=' + taskId + '_'+key+'][type=checkbox][value=\'' + val + '\']').prop("checked", true).change();
           }
-          $('div.task[taskid='+taskId+']').css('display', 'inline-block')
+          $task.css('display', 'inline-block')
         }
+        disableReloadJson=false;
     })
     $('#saveResult').click(function(){
         var txt = JSON.stringify(res);
@@ -89,61 +106,87 @@
           $('#pasteUrl').val(r.url);
         }})
     })
-    $.get(templatePath, function(template) {
-      var template2 = "{{#each this}}<div class=\"task\" taskId=\"{{taskId}}\">" + template + "</div>{{/each}}";
-      var ctxPath = getParameterByName('ctx');
-      $.get({ url: ctxPath, dataType: "json", success: function(ctx) {
-        $('#main').html(Handlebars.compile(template2)(modifyCtx(ctx)))
-        $('#main input').change(function(){
-          var $this = $(this);
-          var name = $this.attr('origName');
-          if (name){
-            var taskId = $this.parents('.task').attr('taskId');
-            res[taskId] = res[taskId] || {};
-            if($this.attr('type') == 'checkbox' && !$this.prop('checked')){
-              delete res[taskId][name];
-            } else {
-              res[taskId][name] = this.value;
+    function initElements(template, ctx, aggrs) {
+      if(aggrs){
+        ctx.forEach(function(task){
+          task.settings.noOption = {id:0};
+          task.settings.options.concat([task.settings.noOption]).forEach(function(opt){
+            opt.aggrs = {};
+            for(var tag in aggrs){
+              var val = ((aggrs[tag]||{})[task.taskId]||{})[opt.id];
+              if(val)
+                opt.aggrs[tag] = val;
             }
+          })
+        })
+      }
+      var template2 = "{{#each this}}<div class=\"task\" taskId=\"{{taskId}}\"><a name=\"task{{taskId}}\"></a><a href=\"#task{{taskId}}\">[#]</a>" + template + "</div>{{/each}}";
+      $('#main').html(Handlebars.compile(template2)(modifyCtx(ctx)))
+      $('#main input').change(function(){
+        var $this = $(this);
+        var name = $this.attr('origName');
+        if (name){
+          var taskId = $this.parents('.task').attr('taskId');
+          res[taskId] = res[taskId] || {};
+          if($this.attr('type') == 'checkbox' && !$this.prop('checked')){
+            delete res[taskId][name];
+          } else {
+            res[taskId][name] = this.value;
+          }
+          if(!disableReloadJson){
             $('#result').val(JSON.stringify(res))
           }
-        })
-        $('#main input').each(function(){
-          var $this = $(this);
-          var taskId = $this.parents('.task').attr('taskId');
-          var name = $this.attr('name');
-          $this.attr('name', taskId + '_' + name);
-          $this.attr('origName', name);
-        })
-        $('#main .options input[type=checkbox]').change(function(){
-          var $this = $(this);
-          var name = $this.attr('origName');
-          if($this.prop('checked')){
-            $this.parents('.task').find('.no-option input[type=checkbox]').prop('checked', false).change();
-            if(name.match(/checked_/)){
-              $this.parents('.option').find('input[type=checkbox]').removeAttr('disabled');
-            }
-          } else {
-            if(name.match(/checked_/)){
-              $this.parents('.option').find('input[type=checkbox]:not([origName^=checked_])').attr('disabled', 'disabled').prop('checked', false).change();
-            }
+        }
+      })
+      $('#main input, #main span.input').each(function(){
+        var $this = $(this);
+        var taskId = $this.parents('.task').attr('taskId');
+        var name = $this.attr('name');
+        $this.attr('name', taskId + '_' + name);
+        $this.attr('origName', name);
+      })
+      $('#main .options-active input[type=checkbox]').change(function(){
+        var $this = $(this);
+        var name = $this.attr('origName');
+        if($this.prop('checked')){
+          $this.parents('.task').find('.no-option-active input[type=checkbox]').prop('checked', false).change();
+          if(name.match(/checked_/)){
+            $this.parents('.option').find('input[type=checkbox]').removeAttr('disabled');
           }
-        }).change()
-        $('#main .no-option input[type=checkbox]').change(function(){
-          var $this = $(this);
-          if($this.prop('checked')){
-            $this.parents('.task').find('.options input[type=checkbox]').prop('checked', false).change();
+        } else {
+          if(name.match(/checked_/)){
+            $this.parents('.option').find('input[type=checkbox]:not([origName*=checked_])').attr('disabled', 'disabled').prop('checked', false).change();
           }
-        })
-        var resPath = getParameterByName('res');
-        if(resPath){
-          $.get({ url: resPath, dataType: "json", success: function(res) {
-            $('#result').val(JSON.stringify(res));
-            $('#applyResult').click()
+        }
+      }).change()
+      $('#main .no-option-active input[type=checkbox]').change(function(){
+        var $this = $(this);
+        if($this.prop('checked')){
+          $this.parents('.task').find('.options-active input[type=checkbox]').prop('checked', false).change();
+        }
+      })
+      var resPath = getParameterByName('res');
+      if(resPath){
+        $.get({ url: resPath, dataType: "json", success: function(res) {
+          $('#result').val(JSON.stringify(res));
+          $('#applyResult').click()
+        }})
+      }
+    }
+    $.get(templatePath, function(template) {
+      var ctxPath = getParameterByName('ctx');
+      $.get({ url: ctxPath, dataType: "json", success: function(ctx){
+        var aggrPath = getParameterByName('aggr');
+        if(aggrPath){
+          $.get({ url: aggrPath, dataType: "json", success: function(aggrs) {
+            initElements(template, ctx, aggrs);
           }})
+        }else{
+            initElements(template, ctx);
         }
       }})
     })
+    
   </script>
 </body>
 

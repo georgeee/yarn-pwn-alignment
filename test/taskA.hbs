@@ -24,11 +24,25 @@
 <p>
 	Выберете наиболее подходящий синсет из русского языка:
 </p>
-<div class="options">
+<div class="options options-active">
 {{#each settings.options}}
   {{field type="radio" name="selectedId" label=wordsStr value=id }} <br>
+  {{#if aggrs}}
+    <div class="aggrs">
+      {{#each aggrs}}
+        <i>{{@key}}: </i> {{this}}<br>
+      {{/each}}
+    </div>
+  {{/if}}
 {{/each}}
 </div>
-<div class="no-option">
+<div class="no-option no-option-active">
 {{field type="radio" name="selectedId" label="ни один не подходит" value="0" }}
+  {{#if settings.noOption.aggrs}}
+    <div class="aggrs">
+      {{#each settings.noOption.aggrs}}
+      <i>{{@key}}: </i> {{this}}<br>
+      {{/each}}
+    </div>
+  {{/if}}
 </div>

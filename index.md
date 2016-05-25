@@ -48,3 +48,15 @@ permalink: index.html
 
 В виде разбиения на задания (Toloka-like): [ссылка](test/index.html?ctx=input/taskA/100shuf.json&template=taskA.hbs).
 
+Результаты:
+
+* [@agapov](test/index.html?ctx=input/taskB/100shuf.json&template=taskB.hbs&res=input/taskB/100shuf/output.agapov.json)
+* [@degteva](test/index.html?ctx=input/taskB/100shuf.json&template=taskB.hbs&res=input/taskB/100shuf/output.degteva.json)
+* [merged](test/index.html?ctx=input/taskB/100shuf.json&template=taskB.hbs&res=input/taskB/100shuf/output.expert.json)
+* [@degteva, merged comparison](test/index.html?ctx=input/taskB/100shuf.json&template=taskBc.hbs&res=input/taskB/100shuf/compare-degteva-expert.json)
+
+Сравнение с результатами аггрегации (croudsourcing, pools ## 12, 20):
+
+* [full] (test/index.html?ctx=input/taskB/100shuf.json&template=taskBc.hbs&res=input/taskB/100shuf/compare-expert-20.json)
+* [disagreement] (test/index.html?ctx=input/taskB/100shuf.json&template=taskBc.hbs&res=input/taskB/100shuf/compare-expert-20.1.json)
+

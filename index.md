@@ -57,6 +57,6 @@ permalink: index.html
 
 Сравнение с результатами аггрегации (croudsourcing, pools ## 12, 20):
 
-* [full] (test/index.html?ctx=input/taskB/100shuf.json&template=taskBc.hbs&res=input/taskB/100shuf/compare-expert-20.json)
-* [disagreement] (test/index.html?ctx=input/taskB/100shuf.json&template=taskBc.hbs&res=input/taskB/100shuf/compare-expert-20.1.json)
+* [full](test/index.html?ctx=input/taskB/100shuf.json&template=taskBc.hbs&res=input/taskB/100shuf/compare-expert-20.json)
+* [disagreement](test/index.html?ctx=input/taskB/100shuf.json&template=taskBc.hbs&res=input/taskB/100shuf/compare-expert-20.1.json)
 

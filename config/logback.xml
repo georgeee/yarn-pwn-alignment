@@ -38,7 +38,7 @@
             <level>info</level>
         </filter>
     </appender>
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="stdout"/>
         <appender-ref ref="debugFile"/>
         <appender-ref ref="infoFile"/>

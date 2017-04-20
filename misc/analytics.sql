@@ -99,3 +99,29 @@ AS $$
                                  WHERE t.srcLabel = ANY(ignoringHavingSrc))
 $$ language 'sql';
 
+CREATE OR REPLACE FUNCTION translate_edge_mastered (threshold INT)
+RETURNS TABLE (id INT, pwnId INT, yarnId INT, masterEdgeId INT, weight FLOAT, mYarnId INT, mWeight FLOAT)
+AS $$
+  SELECT se.*, ee.yarnId, ee.weight
+  FROM (SELECT e.*, rank() over (partition by e.pwnid ORDER BY weight DESC) as rnk
+        FROM translate_edge e  WHERE e.masteredgeid IS NULL
+        ORDER BY pwnid, Weight DESC) ee
+  JOIN Translate_Edge se ON se.masterEdgeId = ee.id WHERE ee.rnk <= threshold
+  UNION 
+  SELECT NULL, ee.pwnId, NULL, ee.id, NULL, ee.yarnId, ee.weight
+  FROM (SELECT e.*, rank() over (partition by e.pwnid ORDER BY weight DESC) as rnk
+        FROM translate_edge e  WHERE e.masteredgeid IS NULL
+        ORDER BY pwnid, Weight DESC) ee
+  WHERE ee.rnk <= threshold;
+$$ language 'sql';
+
+CREATE OR REPLACE FUNCTION translate_edge_mastered_for_export (threshold INT)
+RETURNS TABLE (pwnId VARCHAR(14), masterYarnId VARCHAR(14), yarnId VARCHAR(14), iPwnId INT, iMasterYarnId INT, iYarnId INT)
+AS $$
+  SELECT ps.externalId, mys.externalId, ys.externalId, ps.id, mys.id, ys.id
+  FROM translate_edge_mastered(threshold) tm
+  JOIN synset ps ON ps.Id = tm.pwnId
+  LEFT JOIN synset ys ON ys.id = tm.yarnId
+  LEFT JOIN synset mys ON mys.id = tm.mYarnId
+  ORDER BY ps.externalId, mys.externalId, ys.externalId DESC;
+$$ language 'sql';
